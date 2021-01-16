@@ -135,12 +135,27 @@ module modlist
  private
  public::listchar_t
 
- type::listchar_t !(k)
+ type, abstract :: listabstrat_t
   private
-  !integer, len :: k
   integer(int32) :: filled
   integer(int32) :: nel
   integer(int32),allocatable::id(:)
+  contains
+  procedure(int_destroy_listabstract_t),public,deferred :: destroy 
+  procedure :: destroy_listabstract_t
+ end type
+
+ abstract interface
+  pure subroutine int_destroy_listabstract_t(this)
+   import::listabstrat_t
+   class(listabstrat_t),intent(inout)::this
+  end subroutine
+ end interface
+
+
+ type,extends(listabstrat_t)::listchar_t !(k)
+  private
+  !integer, len :: k
   !character(len=k),allocatable::stored(:)
   character(len=:),allocatable::stored(:)
   contains
@@ -158,6 +173,18 @@ module modlist
  end interface
 
 contains
+
+pure subroutine destroy_listabstract_t(this)
+ class(listabstrat_t), intent(inout) :: this
+
+ this%filled=0
+ this%nel=0
+ if(allocated(this%id))deallocate(this%id)
+
+end subroutine
+
+
+
 
 pure function constructor_listchar_t(k,nel) result(this)
  type(listchar_t) :: this
@@ -263,9 +290,8 @@ end subroutine
 pure subroutine destroy_listchar_t(this)
  class(listchar_t), intent(inout) :: this
 
- this%filled=0
- this%nel=0
- if(allocated(this%id))deallocate(this%id)
+ call this%destroy_listabstract_t
+
  if(allocated(this%stored))deallocate(this%stored)
 
 end subroutine
