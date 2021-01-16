@@ -2,9 +2,13 @@ module modhash
  use iso_fortran_env,only:int32,real64
  implicit none
  private
- public::hashchar,hashint32,roundinguppower2
+ public::hash,roundinguppower2
 
  integer(int32), parameter, public :: seed_hash = 305419896_int32
+ 
+ interface hash
+  module procedure hashchar,hashint32
+ end interface
 
 contains
 
@@ -130,7 +134,7 @@ end module
 
 module modlist
  use iso_fortran_env,only:int32
- use modhash, only: roundinguppower2, seed_hash, hashchar
+ use modhash, only: roundinguppower2, seed_hash, hash
  implicit none
  private
  public::listchar_t
@@ -217,7 +221,7 @@ recursive subroutine add_listchar_t(this, c, index, lnew)
  address = seed_hash
 
  do i = 1, min(this%nel,maxiter)-1
-  address = iand( hashchar(c, address), this%nel - 1) + 1
+  address = iand( hash(c, address), this%nel - 1) + 1
 
   if(this%id(address).eq.0)then
    this%filled = this%filled + 1
@@ -240,7 +244,7 @@ recursive subroutine add_listchar_t(this, c, index, lnew)
  address = seed_hash
 
  do i = 1, min(this%nel,maxiter)-1
-  address = iand( hashchar(c, address), this%nel - 1) + 1
+  address = iand( hash(c, address), this%nel - 1) + 1
 
   if(this%id(address).eq.0)then
    this%filled = this%filled + 1
@@ -334,7 +338,7 @@ pure function getindex_listchar_t(this, c) result(index)
  address = seed_hash
 
  do i = 1, min(this%nel,maxiter)-1
-  address = iand( hashchar(c, address), this%nel - 1) + 1
+  address = iand( hash(c, address), this%nel - 1) + 1
 
   if(this%id(address).eq.0)then
    index=0
@@ -377,21 +381,21 @@ program test
 
  dim=roundinguppower2(1000)
 
- print*,hashint32([1,2,3,4,5]),iand(hashint32([1,2,3,4,5]),dim-1)+1
- print*,hashint32([1,2,3,4,5,6,7,8,9]),iand(hashint32([1,2,3,4,5,6,7,8,9]),dim-1)+1
- print*,hashint32([1,2,3,4,5,6,7,8,9,10]),iand(hashint32([1,2,3,4,5,6,7,8,9,10]),dim-1)+1
- print*,hashint32([1,2,3]),iand(hashint32([1,2,3]),dim-1)+1
- print*,hashint32([1,2]),iand(hashint32([1,2]),dim-1)+1
+ print*,hash([1,2,3,4,5]),iand(hash([1,2,3,4,5]),dim-1)+1
+ print*,hash([1,2,3,4,5,6,7,8,9]),iand(hash([1,2,3,4,5,6,7,8,9]),dim-1)+1
+ print*,hash([1,2,3,4,5,6,7,8,9,10]),iand(hash([1,2,3,4,5,6,7,8,9,10]),dim-1)+1
+ print*,hash([1,2,3]),iand(hash([1,2,3]),dim-1)+1
+ print*,hash([1,2]),iand(hash([1,2]),dim-1)+1
 
 
- print*,'aaa ',hashchar('a')
- print*,'aaa ',hashchar('ab')
- print*,'aaa ',hashchar('abc')
- print*,'aaa ',hashchar('abc ')
- print*,'aaa ',hashchar(' abc')
- print*,'aaa ',hashchar(' abc  afafa')
- print*,'aaa ',hashchar(' abc  afafa 1234566')
- print*,'aaa ',hashchar(' abc  afafa 1234566 pppppppppp')
+ print*,'aaa ',hash('a')
+ print*,'aaa ',hash('ab')
+ print*,'aaa ',hash('abc')
+ print*,'aaa ',hash('abc ')
+ print*,'aaa ',hash(' abc')
+ print*,'aaa ',hash(' abc  afafa')
+ print*,'aaa ',hash(' abc  afafa 1234566')
+ print*,'aaa ',hash(' abc  afafa 1234566 pppppppppp')
 
  list = listchar_t(12)
 
