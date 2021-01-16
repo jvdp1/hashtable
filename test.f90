@@ -1,7 +1,8 @@
 module modhash
  use iso_fortran_env,only:int32,int64,real64
  implicit none
-
+ private
+ public::hashword,roundinguppower2
 contains
 
 pure function hashword(k) result(c)
@@ -19,11 +20,11 @@ pure function hashword(k) result(c)
  b=a
  c=a
 
- pos=0
+ pos=1
  do while (length > 3)
-  a=a+k(pos+1)
-  b=b+k(pos+2)
-  c=c+k(pos+3)
+  a=a+k(pos)
+  b=b+k(pos+1)
+  c=c+k(pos+2)
   call mix(a,b,c)
   length=length-3
   pos=pos+3
@@ -31,14 +32,14 @@ pure function hashword(k) result(c)
 
  select case(length)
   case(1)
-   a=a+k(pos+1)
+   a=a+k(pos)
   case(2)
-   a=a+k(pos+1)
-   b=b+k(pos+2)
+   a=a+k(pos)
+   b=b+k(pos+1)
   case(3)
-   a=a+k(pos+1)
-   b=b+k(pos+2)
-   c=c+k(pos+3)
+   a=a+k(pos)
+   b=b+k(pos+1)
+   c=c+k(pos+2)
   case default
  end select
 
@@ -98,7 +99,13 @@ program test
  use modhash
  use iso_fortran_env,only:int32,int64,real64
  implicit none
+ integer(int32):: dim
 
- print*,selected_int_kind(15),int64
+ dim=roundinguppower2(1000)
 
+ print*,hashword([1,2,3,4,5]),iand(hashword([1,2,3,4,5]),dim-1)+1
+ print*,hashword([1,2,3,4,5,6,7,8,9]),iand(hashword([1,2,3,4,5,6,7,8,9]),dim-1)+1
+ print*,hashword([1,2,3,4,5,6,7,8,9,10]),iand(hashword([1,2,3,4,5,6,7,8,9,10]),dim-1)+1
+ print*,hashword([1,2,3]),iand(hashword([1,2,3]),dim-1)+1
+ print*,hashword([1,2]),iand(hashword([1,2]),dim-1)+1
 end program
