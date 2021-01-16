@@ -5,7 +5,7 @@ module modhash
  public::hashchar,hashint32,roundinguppower2
 contains
 
-function hashchar(k) result(c)
+pure function hashchar(k) result(c)
  character(len=*), intent(in) :: k
  integer(int32) :: c
  
@@ -20,7 +20,7 @@ function hashchar(k) result(c)
  allocate(kint32(length))
 
  do i=1,lenk,4
-   kint32(i) = transfer(k(i:min(i+3,lenk)),kint32(i))
+  kint32(i) = transfer(k(i:min(i+3,lenk)),kint32(i))
  enddo
 
  c = hashint32(kint32)
@@ -69,7 +69,7 @@ pure function hashint32(k) result(c)
 
 end function
 
-function roundinguppower2(x) result(next)
+elemental pure function roundinguppower2(x) result(next)
  integer(kind=int32),intent(in)::x
  integer(kind=int32)::next
 
