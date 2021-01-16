@@ -2,10 +2,31 @@ module modhash
  use iso_fortran_env,only:int32,int64,real64
  implicit none
  private
- public::hashword,roundinguppower2
+ public::hashchar,hashint32,roundinguppower2
 contains
 
-pure function hashword(k) result(c)
+function hashchar(k) result(c)
+ character(len=*), intent(in) :: k
+ integer(int32) :: c
+ 
+ integer(int32) :: lenk, length, i
+ integer(int32), allocatable :: kint32(:)
+
+ lenk = len(k)
+
+ length = int(lenk/4_int32)
+ if(mod(lenk,4).ne.0) length = length + 1
+
+ allocate(kint32(length))
+
+ do i=1,lenk,4
+   kint32(i) = transfer(k(i:min(i+3,lenk)),kint32(i))
+ enddo
+
+ c = hashint32(kint32)
+end function
+
+pure function hashint32(k) result(c)
  integer(kind=int32),intent(in)::k(:)
 
  integer(kind=int32) :: length
@@ -16,7 +37,7 @@ pure function hashword(k) result(c)
 
  length=size(k) 
 
- a=seed + ishft(length,2) !4byte
+ a=seed + ishft(length,2)
  b=a
  c=a
 
@@ -103,9 +124,19 @@ program test
 
  dim=roundinguppower2(1000)
 
- print*,hashword([1,2,3,4,5]),iand(hashword([1,2,3,4,5]),dim-1)+1
- print*,hashword([1,2,3,4,5,6,7,8,9]),iand(hashword([1,2,3,4,5,6,7,8,9]),dim-1)+1
- print*,hashword([1,2,3,4,5,6,7,8,9,10]),iand(hashword([1,2,3,4,5,6,7,8,9,10]),dim-1)+1
- print*,hashword([1,2,3]),iand(hashword([1,2,3]),dim-1)+1
- print*,hashword([1,2]),iand(hashword([1,2]),dim-1)+1
+ print*,hashint32([1,2,3,4,5]),iand(hashint32([1,2,3,4,5]),dim-1)+1
+ print*,hashint32([1,2,3,4,5,6,7,8,9]),iand(hashint32([1,2,3,4,5,6,7,8,9]),dim-1)+1
+ print*,hashint32([1,2,3,4,5,6,7,8,9,10]),iand(hashint32([1,2,3,4,5,6,7,8,9,10]),dim-1)+1
+ print*,hashint32([1,2,3]),iand(hashint32([1,2,3]),dim-1)+1
+ print*,hashint32([1,2]),iand(hashint32([1,2]),dim-1)+1
+
+
+ print*,'aaa ',hashchar('a')
+ print*,'aaa ',hashchar('ab')
+ print*,'aaa ',hashchar('abc')
+ print*,'aaa ',hashchar('abc ')
+ print*,'aaa ',hashchar(' abc')
+ print*,'aaa ',hashchar(' abc  afafa')
+ print*,'aaa ',hashchar(' abc  afafa 1234566')
+ print*,'aaa ',hashchar(' abc  afafa 1234566 pppppppppp')
 end program
