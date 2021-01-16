@@ -1,12 +1,16 @@
 module modhash
- use iso_fortran_env,only:int32,int64,real64
+ use iso_fortran_env,only:int32,real64
  implicit none
  private
  public::hashchar,hashint32,roundinguppower2
+
+ integer(int32), parameter, public :: seed_hash = 305419896_int32
+
 contains
 
-pure function hashchar(k) result(c)
+pure function hashchar(k, seed) result(c)
  character(len=*), intent(in) :: k
+ integer(int32), intent(in), optional :: seed
  integer(int32) :: c
  
  integer(int32) :: lenk, length, i
@@ -22,22 +26,30 @@ pure function hashchar(k) result(c)
  do i=1,lenk,4
   kint32(i) = transfer(k(i:min(i+3,lenk)),kint32(i))
  enddo
-
- c = hashint32(kint32)
+ 
+ if(present(seed))then
+  c = hashint32(kint32, seed)
+ else
+  c = hashint32(kint32)
+ endif
 end function
 
-pure function hashint32(k) result(c)
+pure function hashint32(k, seed) result(c)
  integer(kind=int32),intent(in)::k(:)
+ integer(kind=int32), intent(in), optional :: seed
 
  integer(kind=int32) :: length
  integer(kind=int32) :: a,b,c
  integer(kind=int32) :: pos
  
- integer(kind=int32), parameter :: seed = 305419896_int32
+ integer(kind=int32) :: seed_
+
+ seed_ = seed_hash
+ if(present(seed)) seed_ = seed
 
  length=size(k) 
 
- a=seed + ishft(length,2)
+ a=seed_ + ishft(length,2)
  b=a
  c=a
 
@@ -116,11 +128,110 @@ end function
 
 end module
 
+module modlist
+ use iso_fortran_env,only:int32
+ use modhash, only: roundinguppower2, seed_hash, hashchar
+ implicit none
+ private
+ public::listchar_t
+
+ type::listchar_t !(k)
+  !integer, len :: k
+  integer(int32) :: filled
+  integer(int32) :: nel
+  integer(int32),allocatable::id(:)
+  !character(len=k),allocatable::stored(:)
+  character(len=:),allocatable::stored(:)
+  contains
+  procedure, public :: add => add_list_char_t
+ end type
+ 
+ interface listchar_t
+  module procedure constructor_listchar_t
+ end interface
+
+contains
+
+pure function constructor_listchar_t(k,nel) result(this)
+ type(listchar_t) :: this
+ integer(kind=int32),intent(in) :: k
+ integer(kind=int32),intent(in), optional :: nel
+
+ this%nel = roundinguppower2(10)
+ if(present(nel)) this%nel = roundinguppower2(nel)
+
+ this%filled=0
+
+ allocate(this%id(this%nel))
+ this%id=0
+
+ allocate(character(len=k) :: this%stored(this%nel))
+ this%stored = ''
+
+end function
+
+recursive subroutine add_list_char_t(this, c, index, lnew)
+ class(listchar_t), intent(inout) :: this
+ character(len=*),intent(in) :: c
+ integer(int32),intent(out),optional :: index
+ logical, intent(out), optional :: lnew
+
+ integer(int32) :: i, address
+ integer(int32),parameter :: maxiter = 5000
+ type(listchar_t),allocatable :: thistmp
+
+ if(real(this%filled).gt.0.80*this%nel)then
+  allocate(thistmp)
+  thistmp = listchar_t(len(this%stored), nel = int(this%nel*1.5, int32))
+
+  do i = 1, this%filled
+   call thistmp%add(this%stored(i))
+  enddo
+
+  this%filled = thistmp%filled
+  this%nel = thistmp%nel
+  if(allocated(this%id)) deallocate(this%id)
+  if(allocated(this%stored)) deallocate(this%stored)
+  call move_alloc(thistmp%id,this%id)
+  call move_alloc(thistmp%stored,this%stored)
+ endif
+
+ address = seed_hash
+
+ do i = 1, min(this%nel,maxiter)-1
+  address = iand( hashchar(c, address), this%nel - 1) + 1
+
+  if(this%id(address).eq.0)then
+   this%filled = this%filled + 1
+   this%id(address) = this%filled
+   this%stored(this%id(address)) = c
+   if(present(index)) index = this%id(address)
+   if(present(lnew)) lnew = .true.
+   return
+  else !already occupied
+   if(this%stored(this%id(address)).eq.c)then
+    if(present(index)) index = this%id(address)
+    if(present(lnew)) lnew = .false.
+    return
+   endif
+  endif
+ enddo
+
+ address = -1
+
+ error stop 'too many collisions'
+
+end subroutine
+
+end module
+
 program test
  use modhash
+ use modlist, only: listchar_t
  use iso_fortran_env,only:int32,int64,real64
  implicit none
- integer(int32):: dim
+ integer(int32) :: dim
+ type(listchar_t) :: list
 
  dim=roundinguppower2(1000)
 
@@ -139,4 +250,12 @@ program test
  print*,'aaa ',hashchar(' abc  afafa')
  print*,'aaa ',hashchar(' abc  afafa 1234566')
  print*,'aaa ',hashchar(' abc  afafa 1234566 pppppppppp')
+
+ list = listchar_t(10)
+
+ call list%add('a')
+ call list%add('ab')
+ call list%add('abc')
+ call list%add('abcdd')
+
 end program
