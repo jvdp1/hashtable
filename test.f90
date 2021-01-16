@@ -136,6 +136,7 @@ module modlist
  public::listchar_t
 
  type::listchar_t !(k)
+  private
   !integer, len :: k
   integer(int32) :: filled
   integer(int32) :: nel
@@ -143,7 +144,13 @@ module modlist
   !character(len=k),allocatable::stored(:)
   character(len=:),allocatable::stored(:)
   contains
-  procedure, public :: add => add_list_char_t
+  private
+  procedure, public :: add => add_listchar_t
+  procedure :: destroy => destroy_listchar_t
+  procedure, public :: get => get_listchar_t
+  procedure, public :: getindex => getindex_listchar_t
+  procedure, public :: writetable => writetable_listchar_t
+  final :: destroy_listchar_t_scal, destroy_listchar_t_array1
  end type
  
  interface listchar_t
@@ -170,7 +177,7 @@ pure function constructor_listchar_t(k,nel) result(this)
 
 end function
 
-recursive subroutine add_list_char_t(this, c, index, lnew)
+recursive subroutine add_listchar_t(this, c, index, lnew)
  class(listchar_t), intent(inout) :: this
  character(len=*),intent(in) :: c
  integer(int32),intent(out),optional :: index
@@ -178,23 +185,8 @@ recursive subroutine add_list_char_t(this, c, index, lnew)
 
  integer(int32) :: i, address
  integer(int32),parameter :: maxiter = 5000
- type(listchar_t),allocatable :: thistmp
 
- if(real(this%filled).gt.0.80*this%nel)then
-  allocate(thistmp)
-  thistmp = listchar_t(len(this%stored), nel = int(this%nel*1.5, int32))
-
-  do i = 1, this%filled
-   call thistmp%add(this%stored(i))
-  enddo
-
-  this%filled = thistmp%filled
-  this%nel = thistmp%nel
-  if(allocated(this%id)) deallocate(this%id)
-  if(allocated(this%stored)) deallocate(this%stored)
-  call move_alloc(thistmp%id,this%id)
-  call move_alloc(thistmp%stored,this%stored)
- endif
+ if(real(this%filled).gt.0.80*this%nel)call increase_size()
 
  address = seed_hash
 
@@ -217,9 +209,135 @@ recursive subroutine add_list_char_t(this, c, index, lnew)
   endif
  enddo
 
+ call increase_size()
+
+ address = seed_hash
+
+ do i = 1, min(this%nel,maxiter)-1
+  address = iand( hashchar(c, address), this%nel - 1) + 1
+
+  if(this%id(address).eq.0)then
+   this%filled = this%filled + 1
+   this%id(address) = this%filled
+   this%stored(this%id(address)) = c
+   if(present(index)) index = this%id(address)
+   if(present(lnew)) lnew = .true.
+   return
+  else !already occupied
+   if(this%stored(this%id(address)).eq.c)then
+    if(present(index)) index = this%id(address)
+    if(present(lnew)) lnew = .false.
+    return
+   endif
+  endif
+ enddo
+
+
  address = -1
+ if(present(index)) index = -1
 
  error stop 'too many collisions'
+
+ contains
+
+  subroutine increase_size()
+   type(listchar_t) :: thistmp
+  
+   thistmp = listchar_t(len(this%stored), nel = int(this%nel*1.5, int32))
+  
+   do i = 1, this%filled
+    call thistmp%add(this%stored(i))
+   enddo
+  
+   this%filled = thistmp%filled
+   this%nel = thistmp%nel
+   if(allocated(this%id)) deallocate(this%id)
+   if(allocated(this%stored)) deallocate(this%stored)
+   call move_alloc(thistmp%id,this%id)
+   call move_alloc(thistmp%stored,this%stored)
+  
+  end subroutine
+
+end subroutine
+
+pure subroutine destroy_listchar_t(this)
+ class(listchar_t), intent(inout) :: this
+
+ this%filled=0
+ this%nel=0
+ if(allocated(this%id))deallocate(this%id)
+ if(allocated(this%stored))deallocate(this%stored)
+
+end subroutine
+
+pure subroutine destroy_listchar_t_scal(this)
+ type(listchar_t), intent(inout) :: this
+
+ call this%destroy()
+
+end subroutine
+
+pure subroutine destroy_listchar_t_array1(this)
+ type(listchar_t), intent(inout) :: this(:)
+
+ integer :: i
+
+ do i = 1, size(this)
+  call this(i)%destroy()
+ enddo
+
+end subroutine
+
+pure function get_listchar_t(this, index) result(c)
+ class(listchar_t), intent(in) :: this
+ integer(int32), intent(in) :: index
+ character(len=len(this%stored)) :: c
+
+ c = this%stored(index)
+
+end function
+
+pure function getindex_listchar_t(this, c) result(index)
+ class(listchar_t), intent(in) :: this
+ character(*),intent(in) :: c
+ integer(int32) :: index
+
+
+ integer(int32) :: i, address
+ integer(int32),parameter :: maxiter = 5000
+ type(listchar_t),allocatable :: thistmp
+
+ address = seed_hash
+
+ do i = 1, min(this%nel,maxiter)-1
+  address = iand( hashchar(c, address), this%nel - 1) + 1
+
+  if(this%id(address).eq.0)then
+   index=0
+   return
+  else !occupied
+   if(this%stored(this%id(address)).eq.c)then
+    index = this%id(address)
+    return
+   endif
+  endif
+ enddo
+
+ index = -1
+
+end function
+
+subroutine writetable_listchar_t(this, namefile)
+ class(listchar_t), intent(in) :: this
+ character(*), intent(in) :: namefile
+
+ integer :: i, un
+ 
+ open(newunit=un, file=namefile, action = 'write')
+ do i = 1, this%filled
+  write(un,'(i0,x,a)')i,this%get(i)
+ enddo
+ close(un)
 
 end subroutine
 
@@ -251,11 +369,28 @@ program test
  print*,'aaa ',hashchar(' abc  afafa 1234566')
  print*,'aaa ',hashchar(' abc  afafa 1234566 pppppppppp')
 
- list = listchar_t(10)
+ list = listchar_t(12)
 
  call list%add('a')
  call list%add('ab')
  call list%add('abc')
  call list%add('abcdd')
+ call list%add('1')
+ call list%add('12')
+ call list%add('123')
+ call list%add('1234')
+ call list%add('12345')
+ call list%add('12346')
+ call list%add('12347')
+ call list%add('12348')
+ call list%writetable('list0.dat')
+ call list%add('12349')
+ call list%add('12350')
+ call list%add('12351')
+ call list%add('12352')
+ call list%add('12353')
+ call list%add('12353')
+ call list%add('12353')
 
+ call list%writetable('list.dat')
 end program
