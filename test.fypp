@@ -7,7 +7,7 @@ module modhash
  integer(int32), parameter, public :: seed_hash = 305419896_int32
  
  interface hash
-  module procedure hashchar,hashint32, hashint32_scal, hashreal32_scal
+  module procedure hashchar, hashint32, hashreal32, hashint32_scal, hashreal32_scal
  end interface
 
 contains
@@ -77,6 +77,52 @@ pure function hashint32(k, seed) result(c)
    a=a+k(pos)
    b=b+k(pos+1)
    c=c+k(pos+2)
+  case default
+ end select
+
+ call final(a,b,c)
+
+end function
+
+pure function hashreal32(k, seed) result(c)
+ real(kind=real32),intent(in)::k(:)
+ integer(kind=int32), intent(in), optional :: seed
+
+ integer(kind=int32) :: length
+ integer(kind=int32) :: a,b,c
+ integer(kind=int32) :: pos
+ 
+ integer(kind=int32) :: seed_
+
+ seed_ = seed_hash
+ if(present(seed)) seed_ = seed
+
+ length=size(k) 
+
+ a=seed_ + ishft(length,2)
+ b=a
+ c=a
+
+ pos=1
+ do while (length > 3)
+  a=a+transfer(k(pos),a)
+  b=b+transfer(k(pos+1),b)
+  c=c+transfer(k(pos+2),c)
+  call mix(a,b,c)
+  length=length-3
+  pos=pos+3
+ end do 
+
+ select case(length)
+  case(1)
+   a=a+transfer(k(pos),a)
+  case(2)
+   a=a+transfer(k(pos),a)
+   b=b+transfer(k(pos+1),b)
+  case(3)
+   a=a+transfer(k(pos),a)
+   b=b+transfer(k(pos+1),b)
+   c=c+transfer(k(pos+2),c)
   case default
  end select
 
@@ -168,7 +214,7 @@ end function
 
 end module
 
-#:set TYPES = list(zip(["integer(int32)", "character(len=:)","real(real32)"],["int32","char","real32"],["integer(int32)","character(len=*)","real(real32)"]))
+#:set TYPES = list(zip(["character(len=:)","integer(int32)", "real(real32)"],["char","int32","real32"],["character(len=*)","integer(int32)","real(real32)"]))
 module modlist
  use iso_fortran_env,only:int32,real32
  use modhash, only: roundinguppower2, seed_hash, hash
