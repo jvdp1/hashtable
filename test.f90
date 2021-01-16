@@ -185,7 +185,6 @@ end subroutine
 
 
 
-
 pure function constructor_listchar_t(k,nel) result(this)
  type(listchar_t) :: this
  integer(kind=int32),intent(in) :: k
@@ -327,7 +326,6 @@ pure function getindex_listchar_t(this, c) result(index)
  class(listchar_t), intent(in) :: this
  character(*),intent(in) :: c
  integer(int32) :: index
-
 
  integer(int32) :: i, address
  integer(int32),parameter :: maxiter = 5000
