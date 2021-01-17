@@ -1,29 +1,17 @@
 program test_table
  use iso_fortran_env, only: int32,real32
- use modtable, only: tablechar_t, tableint32_t, tablereal32_t, table_arrint32_t
+ use modtable, only: tablechar_t, tableint32_t, tablereal32_t, table_arrint32_t, table_arrreal32_t
  implicit none
  integer(int32) :: pos
- type(table_arrint32_t) :: tablearri32
 
 
  call test_char()
  call test_int32()
  call test_real32()
 
+ call test_arrint32()
+ call test_arrreal32()
 
-
-
-
- tablearri32 = table_arrint32_t(3)
-
- call tablearri32%add([1,2,3])
- call tablearri32%add([3,2,3])
- call tablearri32%add([1,2,2])
-
- call tablearri32%add([1,2,2,3], pos)
- print*,'pos ', pos
-
- call tablearri32%writetable('tablearri32.dat')
 
 contains
 subroutine test_char()
@@ -354,6 +342,225 @@ subroutine test_real32()
  print*,'Succesful real32'
 
 end subroutine
+
+subroutine test_arrint32()
+ type(table_arrint32_t) :: table
+ type(table_arrint32_t) :: table1
+
+ integer :: i,j, io, un
+ integer(int32) :: k(3)
+ character(len=:), allocatable :: namefile
+ logical :: lnew
+
+ table = table_arrint32_t(3, nel=5)
+
+ call check(table%getsize() == 8, '_arrint32: issue with initial size')
+ call check(table%getfilled() == 0, '_arrint32: issue with initial filled')
+
+ !empty file
+ namefile='table__arrint32.dat'
+ call table%writetable(namefile)
+ open(newunit=un,file=namefile,status='old',action='read',iostat=io)
+ call check(io == 0, 'issue with empty '//namefile)
+  
+ i=0
+ do
+  read(un,*,iostat=io)
+  if(io.ne.0)exit
+  i=i+1
+ enddo
+ call check(i == 0, 'issue with empty '//namefile//': file not empty')
+ call check(io == -1, 'io: issue with empty '//namefile)
+
+ call table%add([10,1,1])
+ call check(table%getfilled()==1 .and. table%getsize()==8, '_arrint32: issue 1')
+
+ call table%add([11,2,1])
+ call check(table%getfilled()==2 .and. table%getsize()==8, '_arrint32: issue 2')
+
+ call table%add([111,3,1])
+ call check(table%getfilled()==3 .and. table%getsize()==8, '_arrint32: issue 3')
+
+ call table%add([2222,4,1])
+ call check(table%getfilled()==4 .and. table%getsize()==8, '_arrint32: issue 4')
+
+ call table%add([22,3,1])
+ call check(table%getfilled()==5 .and. table%getsize()==16, '_arrint32: issue 5')
+
+ call table%add([333,1,1])
+ call check(table%getfilled()==6 .and. table%getsize()==32, '_arrint32: issue 6')
+
+ call table%add([444,1,1])
+ call check(table%getfilled()==7 .and. table%getsize()==32, '_arrint32: issue 7')
+
+ call table%add([5,1,1])
+ call check(table%getfilled()==8 .and. table%getsize()==32, '_arrint32: issue 8')
+
+ call table%add([5,1,1],lnew = lnew)
+ call check(.not.lnew,'_arrint32: issue lnew 0')
+
+ call table%add([66,1,1],lnew = lnew)
+ call check(lnew,'_arrint32: issue lnew 1')
+
+ call table%add([22,3,1], i)
+ call check(i==5, '_arrint32: issue with index 0')
+
+ call table%add([22,3,1], i, lnew)
+ call check(i==5 .and. .not.lnew, '_arrint32: issue with index 1')
+
+ call table%add([19,1,1], i)
+ call check(i==10, '_arrint32: issue with index 2')
+
+ call table%add([199,1,1], i, lnew)
+ call check(i==11 .and. lnew, '_arrint32: issue with index 3')
+
+ call check(table%getindex([333,1,1]) == 6,'_arrint32: issue with getindex 0')
+ call check(table%getindex([22,3,1]) == 5,'_arrint32: issue with getindex 1')
+
+ call check(table%getindex([huge(k(1)),1,1]) == -1,'_arrint32: issue with getindex 2')
+
+ call check(all(table%get(10) == [19,1,1]),'_arrint32: issue with get 0')
+ call check(all(table%get(6) == [333,1,1]),'_arrint32: issue with get 1')
+
+ print*,'_arrint32: get outside filled: ',table%get(table%getfilled()+1) !how to test that
+
+ call table%writetable(namefile//'1')
+
+ !read table, add to a new, and check
+ table1=table_arrint32_t(3)
+ namefile=namefile//'1'
+ open(newunit=un,file=namefile,status='old',action='read',iostat=io)
+ call check(io == 0, 'issue with '//namefile)
+  
+ i=0
+ do
+  read(un,*,iostat=io)j,k
+  if(io.ne.0)exit
+  call table1%add(k)
+  call check(table%getindex(k) == table1%getindex(k), '_arrint32: issue 0 ')
+  call check(all(table%get(j) == table1%get(j)), '_arrint32: issue 1 ')
+  call check(j == table1%getindex(k), '_arrint32: issue 2 ')
+  call check(all(k == table1%get(j)), '_arrint32: issue 3 ')
+  i=i+1
+ enddo
+ call check(io == -1, '_arrint32: io: issue with '//namefile)
+ call check(i == 11, '_arrint32: issue with '//namefile//': file not correct')
+
+ call check(table%getfilled() == table1%getfilled(), '_arrint32: issue table1 0')
+
+ print*,'Succesful _arrint32'
+
+end subroutine
+
+subroutine test_arrreal32()
+ type(table_arrreal32_t) :: table
+ type(table_arrreal32_t) :: table1
+
+ integer :: i,j, io, un
+ real(real32) :: k(3)
+ character(len=:), allocatable :: namefile
+ logical :: lnew
+
+ table = table_arrreal32_t(3, nel=5)
+
+ call check(table%getsize() == 8, '_arrreal32: issue with initial size')
+ call check(table%getfilled() == 0, '_arrreal32: issue with initial filled')
+
+ !empty file
+ namefile='table__arrreal32.dat'
+ call table%writetable(namefile)
+ open(newunit=un,file=namefile,status='old',action='read',iostat=io)
+ call check(io == 0, 'issue with empty '//namefile)
+  
+ i=0
+ do
+  read(un,*,iostat=io)
+  if(io.ne.0)exit
+  i=i+1
+ enddo
+ call check(i == 0, 'issue with empty '//namefile//': file not empty')
+ call check(io == -1, 'io: issue with empty '//namefile)
+
+ call table%add([10.,1.,1.])
+ call check(table%getfilled()==1 .and. table%getsize()==8, '_arrreal32: issue 1')
+
+ call table%add([11.,2.,1.])
+ call check(table%getfilled()==2 .and. table%getsize()==8, '_arrreal32: issue 2')
+
+ call table%add([111.,3.,1.])
+ call check(table%getfilled()==3 .and. table%getsize()==8, '_arrreal32: issue 3')
+
+ call table%add([2222.,4.,1.])
+ call check(table%getfilled()==4 .and. table%getsize()==8, '_arrreal32: issue 4')
+
+ call table%add([22.,3.,1.])
+ call check(table%getfilled()==5 .and. table%getsize()==8, '_arrreal32: issue 5')
+
+ call table%add([333.,1.,1.])
+ call check(table%getfilled()==6 .and. table%getsize()==16, '_arrreal32: issue 6')
+
+ call table%add([444.,1.,1.])
+ call check(table%getfilled()==7 .and. table%getsize()==16, '_arrreal32: issue 7')
+
+ call table%add([5.,1.,1.])
+ call check(table%getfilled()==8 .and. table%getsize()==32, '_arrreal32: issue 8')
+
+ call table%add([5.,1.,1.],lnew = lnew)
+ call check(.not.lnew,'_arrreal32: issue lnew 0')
+
+ call table%add([66.,1.,1.],lnew = lnew)
+ call check(lnew,'_arrreal32: issue lnew 1')
+
+ call table%add([22.,3.,1.], i)
+ call check(i==5, '_arrreal32: issue with index 0')
+
+ call table%add([22.,3.,1.], i, lnew)
+ call check(i==5 .and. .not.lnew, '_arrreal32: issue with index 1')
+
+ call table%add([19.,1.,1.], i)
+ call check(i==10, '_arrreal32: issue with index 2')
+
+ call table%add([199.,1.,1.], i, lnew)
+ call check(i==11 .and. lnew, '_arrreal32: issue with index 3')
+
+ call check(table%getindex([333.,1.,1.]) == 6,'_arrreal32: issue with getindex 0')
+ call check(table%getindex([22.,3.,1.]) == 5,'_arrreal32: issue with getindex 1')
+
+ call check(table%getindex([huge(k(1)),1.,1.]) == -1,'_arrreal32: issue with getindex 2')
+
+ call check(all(table%get(10) == [19.,1.,1.]),'_arrreal32: issue with get 0')
+ call check(all(table%get(6) == [333.,1.,1.]),'_arrreal32: issue with get 1')
+
+ print*,'_arrreal32: get outside filled: ',table%get(table%getfilled()+1) !how to test that
+
+ call table%writetable(namefile//'1')
+
+ !read table, add to a new, and check
+ table1=table_arrreal32_t(3)
+ namefile=namefile//'1'
+ open(newunit=un,file=namefile,status='old',action='read',iostat=io)
+ call check(io == 0, 'issue with '//namefile)
+  
+ i=0
+ do
+  read(un,*,iostat=io)j,k
+  if(io.ne.0)exit
+  call table1%add(k)
+  call check(table%getindex(k) == table1%getindex(k), '_arrreal32: issue 0 ')
+  call check(all(table%get(j) == table1%get(j)), '_arrreal32: issue 1 ')
+  call check(j == table1%getindex(k), '_arrreal32: issue 2 ')
+  call check(all(k == table1%get(j)), '_arrreal32: issue 3 ')
+  i=i+1
+ enddo
+ call check(io == -1, '_arrreal32: io: issue with '//namefile)
+ call check(i == 11, '_arrreal32: issue with '//namefile//': file not correct')
+
+ call check(table%getfilled() == table1%getfilled(), '_arrreal32: issue table1 0')
+
+ print*,'Succesful _arrreal32'
+
+end subroutine
+
 
  subroutine check(lcheck, a)
   logical, intent(in) :: lcheck

@@ -458,6 +458,7 @@ contains
    ${t}$ :: c(size(this%stored,1))
 
    if(index.gt.this%filled) then
+    c = 0
     return !what should be the flag
    endif
 
@@ -485,7 +486,7 @@ contains
     address = iand(hash(c, address), this%nel - 1) + 1
 
     if (this%id(address) .eq. 0) then
-     index = 0
+     index = -1
      return
     else !occupied
      if (all(this%stored(:,this%id(address)) .eq. c)) then
