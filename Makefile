@@ -1,7 +1,7 @@
 # Fortran stdlib Makefile
 
 FC = ifort
-FFLAGS = -g -check all -traceback
+FFLAGS = -g -check all -traceback -stand f08
 FYPPFLAGS=
 
 export FC
