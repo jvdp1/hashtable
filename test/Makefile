@@ -1,7 +1,7 @@
-PROGS_SRC = test_hash.f90 test_list.f90
+PROGS_SRC = test_hash.f90 test_table.f90
 
 CPPFLAGS += -I../src
-LDFLAGS += -L../src -llist
+LDFLAGS += -L../src -lhashtable
 
 OBJS = $(PROGS_SRC:.f90=.o)
 PROGS = $(OBJS:.o=)

@@ -1,58 +1,58 @@
 #:set TYPES = list(zip(["character(len=:)","integer(int32)", "real(real32)"],["char","int32","real32"],["character(len=*)","integer(int32)","real(real32)"]))
-module modlist
+module modtable
  use iso_fortran_env,only:int32,real32
  use modhash, only: roundinguppower2, seed_hash, hash
  implicit none
  private
  #:for t,k,l in TYPES
- public::list${k}$_t
+ public::table${k}$_t
  #:endfor
 
- type, abstract :: listabstrat_t
+ type, abstract :: tableabstrat_t
   private
   integer(int32) :: filled
   integer(int32) :: nel
   integer(int32),allocatable::id(:)
   contains
-  procedure(int_destroy_listabstract_t),public,deferred :: destroy 
-  procedure :: destroy_listabstract_t
+  procedure(int_destroy_tableabstract_t),public,deferred :: destroy 
+  procedure :: destroy_tableabstract_t
  end type
 
  abstract interface
-  pure subroutine int_destroy_listabstract_t(this)
-   import::listabstrat_t
-   class(listabstrat_t),intent(inout)::this
+  pure subroutine int_destroy_tableabstract_t(this)
+   import::tableabstrat_t
+   class(tableabstrat_t),intent(inout)::this
   end subroutine
  end interface
 
 
 
  #:for t,k,l in TYPES
- type,extends(listabstrat_t)::list${k}$_t !(k)
+ type,extends(tableabstrat_t)::table${k}$_t !(k)
   private
   !integer, len :: k
   !character(len=k),allocatable::stored(:)
   ${t}$,allocatable::stored(:)
   contains
   private
-  procedure, public :: add => add_list${k}$_t
-  procedure :: destroy => destroy_list${k}$_t
-  procedure, public :: get => get_list${k}$_t
-  procedure, public :: getindex => getindex_list${k}$_t
-  procedure, public :: writetable => writetable_list${k}$_t
-  final :: destroy_list${k}$_t_scal, destroy_list${k}$_t_array1
+  procedure, public :: add => add_table${k}$_t
+  procedure :: destroy => destroy_table${k}$_t
+  procedure, public :: get => get_table${k}$_t
+  procedure, public :: getindex => getindex_table${k}$_t
+  procedure, public :: writetable => writetable_table${k}$_t
+  final :: destroy_table${k}$_t_scal, destroy_table${k}$_t_array1
  end type
 
- interface list${k}$_t
-  module procedure constructor_list${k}$_t
+ interface table${k}$_t
+  module procedure constructor_table${k}$_t
  end interface
 
  #:endfor
 
 contains
 
-pure subroutine destroy_listabstract_t(this)
- class(listabstrat_t), intent(inout) :: this
+pure subroutine destroy_tableabstract_t(this)
+ class(tableabstrat_t), intent(inout) :: this
 
  this%filled=0
  this%nel=0
@@ -63,8 +63,8 @@ end subroutine
 
 
 #:for t,k,l in TYPES
-pure function constructor_list${k}$_t(k,nel) result(this)
- type(list${k}$_t) :: this
+pure function constructor_table${k}$_t(k,nel) result(this)
+ type(table${k}$_t) :: this
  integer(kind=int32),intent(in), optional :: k
  integer(kind=int32),intent(in), optional :: nel
 
@@ -86,8 +86,8 @@ pure function constructor_list${k}$_t(k,nel) result(this)
 
 end function
 
-recursive subroutine add_list${k}$_t(this, c, index, lnew)
- class(list${k}$_t), intent(inout) :: this
+recursive subroutine add_table${k}$_t(this, c, index, lnew)
+ class(table${k}$_t), intent(inout) :: this
  ${l}$,intent(in) :: c
  integer(int32),intent(out),optional :: index
  logical, intent(out), optional :: lnew
@@ -150,12 +150,12 @@ recursive subroutine add_list${k}$_t(this, c, index, lnew)
  contains
 
   subroutine increase_size()
-   type(list${k}$_t) :: thistmp
+   type(table${k}$_t) :: thistmp
 
    #:if k[0] == 'c'
-   thistmp = list${k}$_t(len(this%stored), nel = int(this%nel*1.5, int32))
+   thistmp = table${k}$_t(len(this%stored), nel = int(this%nel*1.5, int32))
    #:else
-   thistmp = list${k}$_t(nel = int(this%nel*1.5, int32))
+   thistmp = table${k}$_t(nel = int(this%nel*1.5, int32))
    #:endif
   
    do i = 1, this%filled
@@ -173,25 +173,25 @@ recursive subroutine add_list${k}$_t(this, c, index, lnew)
 
 end subroutine
 
-pure subroutine destroy_list${k}$_t(this)
- class(list${k}$_t), intent(inout) :: this
+pure subroutine destroy_table${k}$_t(this)
+ class(table${k}$_t), intent(inout) :: this
 
- call this%destroy_listabstract_t
+ call this%destroy_tableabstract_t
 
  if(allocated(this%stored))deallocate(this%stored)
 
 end subroutine
 
 
-pure subroutine destroy_list${k}$_t_scal(this)
- type(list${k}$_t), intent(inout) :: this
+pure subroutine destroy_table${k}$_t_scal(this)
+ type(table${k}$_t), intent(inout) :: this
 
  call this%destroy()
 
 end subroutine
 
-pure subroutine destroy_list${k}$_t_array1(this)
- type(list${k}$_t), intent(inout) :: this(:)
+pure subroutine destroy_table${k}$_t_array1(this)
+ type(table${k}$_t), intent(inout) :: this(:)
 
  integer :: i
 
@@ -201,8 +201,8 @@ pure subroutine destroy_list${k}$_t_array1(this)
 
 end subroutine
 
-pure function get_list${k}$_t(this, index) result(c)
- class(list${k}$_t), intent(in) :: this
+pure function get_table${k}$_t(this, index) result(c)
+ class(table${k}$_t), intent(in) :: this
  integer(int32), intent(in) :: index
  #:if k[0] == 'c'
  character(len=len(this%stored)) :: c
@@ -214,14 +214,14 @@ pure function get_list${k}$_t(this, index) result(c)
 
 end function
 
-pure function getindex_list${k}$_t(this, c) result(index)
- class(list${k}$_t), intent(in) :: this
+pure function getindex_table${k}$_t(this, c) result(index)
+ class(table${k}$_t), intent(in) :: this
  ${l}$,intent(in) :: c
  integer(int32) :: index
 
  integer(int32) :: i, address
  integer(int32),parameter :: maxiter = 5000
- type(list${k}$_t),allocatable :: thistmp
+ type(table${k}$_t),allocatable :: thistmp
 
  address = seed_hash
 
@@ -243,8 +243,8 @@ pure function getindex_list${k}$_t(this, c) result(index)
 
 end function
 
-subroutine writetable_list${k}$_t(this, namefile)
- class(list${k}$_t), intent(in) :: this
+subroutine writetable_table${k}$_t(this, namefile)
+ class(table${k}$_t), intent(in) :: this
  character(*), intent(in) :: namefile
 
  integer :: i, un
