@@ -15,6 +15,8 @@ program test_table
  call table%add('abc')
  call table%add('abcdd')
  call table%add('1')
+ call table%add('   1')
+ call table%add('   1    ')
  call table%add('12')
  call table%add('123')
  call table%add('1234')
@@ -26,10 +28,11 @@ program test_table
  call table%add('12349')
  call table%add('12350')
  call table%add('12351')
- call table%add('12352')
+ call table%add('  12352')
  call table%add('12353')
  call table%add('12353')
  call table%add('12353')
+ call table%add('12353   ')
 
  call table%writetable('table.dat')
 
@@ -53,8 +56,9 @@ program test_table
  call tablearri32%add([1,2,3])
  call tablearri32%add([3,2,3])
  call tablearri32%add([1,2,2])
- call tablearri32%writetable('tablearri32.dat')
 
  call tablearri32%add([1,2,2,3], pos)
  print*,'pos ', pos
+
+ call tablearri32%writetable('tablearri32.dat')
 end program
