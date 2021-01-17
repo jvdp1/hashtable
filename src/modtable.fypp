@@ -262,6 +262,10 @@ contains
    #:endif
 
    if(index.gt.this%filled) then
+    #:if k[0] == 'c'
+    #:else
+    c = 0  !should NaN
+    #:endif
     return !what should be the flag
    endif
     
@@ -284,7 +288,7 @@ contains
     address = iand(hash(c, address), this%nel - 1) + 1
 
     if (this%id(address) .eq. 0) then
-     index = 0
+     index = -1
      return
     else !occupied
      if (this%stored(this%id(address)) .eq. c) then
