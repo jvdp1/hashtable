@@ -306,12 +306,18 @@ contains
 
   recursive subroutine add_table_arr${k}$_t(this, c, index, lnew)
    class(table_arr${k}$_t), intent(inout) :: this
-   ${l}$, intent(in) :: c(size(this%stored,1))
+   ${l}$, intent(in) :: c(:)
    integer(int32), intent(out), optional :: index
    logical, intent(out), optional :: lnew
 
    integer(int32) :: i, address
    integer(int32), parameter :: maxiter = 5000
+
+   if(size(c).ne.size(this%stored,1))then
+     if (present(index)) index = -1
+     if (present(lnew)) lnew = .false.
+     return
+   endif
 
    if (real(this%filled) .gt. 0.80*this%nel) call increase_size()
 
@@ -424,12 +430,17 @@ contains
 
   pure function getindex_table_arr${k}$_t(this, c) result(index)
    class(table_arr${k}$_t), intent(in) :: this
-   ${l}$, intent(in) :: c(size(this%stored,1))
+   ${l}$, intent(in) :: c(:)
    integer(int32) :: index
 
    integer(int32) :: i, address
    integer(int32), parameter :: maxiter = 5000
    type(table_arr${k}$_t), allocatable :: thistmp
+
+   if(size(c).ne.size(this%stored,1))then
+    index = -1
+    return
+   endif
 
    address = seed_hash
 

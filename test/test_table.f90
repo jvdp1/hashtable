@@ -1,6 +1,8 @@
 program test_table
+ use iso_fortran_env, only: int32
  use modtable, only: tablechar_t, tableint32_t, tablereal32_t, table_arrint32_t
  implicit none
+ integer(int32) :: pos
  type(tablechar_t) :: table
  type(tableint32_t) :: table32
  type(tablereal32_t) :: tabler32
@@ -53,5 +55,6 @@ program test_table
  call tablearri32%add([1,2,2])
  call tablearri32%writetable('tablearri32.dat')
 
- call tablearri32%add([1,2,2,3])
+ call tablearri32%add([1,2,2,3], pos)
+ print*,'pos ', pos
 end program
