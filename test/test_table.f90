@@ -1,9 +1,10 @@
 program test_table
- use modtable, only: tablechar_t, tableint32_t, tablereal32_t
+ use modtable, only: tablechar_t, tableint32_t, tablereal32_t, table_arrint32_t
  implicit none
  type(tablechar_t) :: table
  type(tableint32_t) :: table32
  type(tablereal32_t) :: tabler32
+ type(table_arrint32_t) :: tablearri32
 
  table = tablechar_t(12)
 
@@ -44,4 +45,13 @@ program test_table
  call tabler32%add(5.)
  call tabler32%writetable('tablereal32.dat')
 
+
+ tablearri32 = table_arrint32_t(3)
+
+ call tablearri32%add([1,2,3])
+ call tablearri32%add([3,2,3])
+ call tablearri32%add([1,2,2])
+ call tablearri32%writetable('tablearri32.dat')
+
+ call tablearri32%add([1,2,2,3])
 end program

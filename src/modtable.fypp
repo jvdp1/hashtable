@@ -1,4 +1,5 @@
 #:set TYPES = list(zip(["character(len=:)","integer(int32)", "real(real32)"],["char","int32","real32"],["character(len=*)","integer(int32)","real(real32)"]))
+#:set NTYPES = list(zip(["integer(int32)", "real(real32)"],["int32","real32"],["integer(int32)","real(real32)"]))
 module modtable
  use iso_fortran_env, only: int32, real32
  use modhash, only: roundinguppower2, seed_hash, hash
@@ -6,6 +7,9 @@ module modtable
  private
  #:for t,k,l in TYPES
   public::table${k}$_t
+ #:endfor
+ #:for t,k,l in NTYPES
+  public::table_arr${k}$_t
  #:endfor
 
  type, abstract :: tableabstrat_t
@@ -46,6 +50,32 @@ module modtable
   end interface
 
  #:endfor
+
+
+
+ #:for t,k,l in NTYPES
+  type, extends(tableabstrat_t) :: table_arr${k}$_t !(k)
+   private
+   !integer, len :: k
+   !character(len=k),allocatable::stored(:)
+   ${t}$, allocatable ::stored(:,:)
+  contains
+   private
+   procedure, public :: add => add_table_arr${k}$_t
+   procedure :: destroy => destroy_table_arr${k}$_t
+   procedure, public :: get => get_table_arr${k}$_t
+   procedure, public :: getindex => getindex_table_arr${k}$_t
+   procedure, public :: writetable => writetable_table_arr${k}$_t
+   final :: destroy_table_arr${k}$_t_scal, destroy_table_arr${k}$_t_array1
+  end type
+
+  interface table_arr${k}$_t
+   module procedure constructor_table_arr${k}$_t
+  end interface
+
+ #:endfor
+
+
 
 contains
 
@@ -256,5 +286,188 @@ contains
   end subroutine
 
  #:endfor
+
+ #:for t,k,l in NTYPES
+  pure function constructor_table_arr${k}$_t(k, nel) result(this)
+   integer(kind=int32), intent(in) :: k
+   integer(kind=int32), intent(in), optional :: nel
+   type(table_arr${k}$_t) :: this
+
+   this%nel = roundinguppower2(10)
+   if (present(nel)) this%nel = roundinguppower2(nel)
+
+   this%filled = 0
+
+   allocate (this%id(this%nel))
+   this%id = 0
+
+   allocate (this%stored(this%nel,k))
+   this%stored = 0
+
+  end function
+
+  recursive subroutine add_table_arr${k}$_t(this, c, index, lnew)
+   class(table_arr${k}$_t), intent(inout) :: this
+   ${l}$, intent(in) :: c(size(this%stored,2))
+   integer(int32), intent(out), optional :: index
+   logical, intent(out), optional :: lnew
+
+   integer(int32) :: i, address
+   integer(int32), parameter :: maxiter = 5000
+
+   if (real(this%filled) .gt. 0.80*this%nel) call increase_size()
+
+   address = seed_hash
+
+   do i = 1, min(this%nel, maxiter) - 1
+    address = iand(hash(c, address), this%nel - 1) + 1
+
+    if (this%id(address) .eq. 0) then
+     this%filled = this%filled + 1
+     this%id(address) = this%filled
+     this%stored(this%id(address),:) = c
+     if (present(index)) index = this%id(address)
+     if (present(lnew)) lnew = .true.
+     return
+    else !already occupied
+     if (all(this%stored(this%id(address),:) .eq. c)) then
+      if (present(index)) index = this%id(address)
+      if (present(lnew)) lnew = .false.
+      return
+     end if
+    end if
+   end do
+
+   call increase_size()
+
+   address = seed_hash
+
+   do i = 1, min(this%nel, maxiter) - 1
+    address = iand(hash(c, address), this%nel - 1) + 1
+
+    if (this%id(address) .eq. 0) then
+     this%filled = this%filled + 1
+     this%id(address) = this%filled
+     this%stored(this%id(address),:) = c
+     if (present(index)) index = this%id(address)
+     if (present(lnew)) lnew = .true.
+     return
+    else !already occupied
+     if (all(this%stored(this%id(address),:) .eq. c)) then
+      if (present(index)) index = this%id(address)
+      if (present(lnew)) lnew = .false.
+      return
+     end if
+    end if
+   end do
+
+   address = -1
+   if (present(index)) index = -1
+
+   error stop 'too many collisions'
+
+  contains
+
+   subroutine increase_size()
+    type(table_arr${k}$_t) :: thistmp
+
+     thistmp = table_arr${k}$_t(size(this%stored,2), nel=int(this%nel*1.5, int32))
+
+    do i = 1, this%filled
+     call thistmp%add(this%stored(i,:))
+    end do
+
+    this%filled = thistmp%filled
+    this%nel = thistmp%nel
+    if (allocated(this%id)) deallocate (this%id)
+    if (allocated(this%stored)) deallocate (this%stored)
+    call move_alloc(thistmp%id, this%id)
+    call move_alloc(thistmp%stored, this%stored)
+
+   end subroutine
+
+  end subroutine
+
+  pure subroutine destroy_table_arr${k}$_t(this)
+   class(table_arr${k}$_t), intent(inout) :: this
+
+   call this%destroy_tableabstract_t
+
+   if (allocated(this%stored)) deallocate (this%stored)
+
+  end subroutine
+
+  pure subroutine destroy_table_arr${k}$_t_scal(this)
+   type(table_arr${k}$_t), intent(inout) :: this
+
+   call this%destroy()
+
+  end subroutine
+
+  pure subroutine destroy_table_arr${k}$_t_array1(this)
+   type(table_arr${k}$_t), intent(inout) :: this(:)
+
+   integer :: i
+
+   do i = 1, size(this)
+    call this(i)%destroy()
+   end do
+
+  end subroutine
+
+  pure function get_table_arr${k}$_t(this, index) result(c)
+   class(table_arr${k}$_t), intent(in) :: this
+   integer(int32), intent(in) :: index
+   ${t}$ :: c(size(this%stored,2))
+
+   c = this%stored(index,:)
+
+  end function
+
+  pure function getindex_table_arr${k}$_t(this, c) result(index)
+   class(table_arr${k}$_t), intent(in) :: this
+   ${l}$, intent(in) :: c(size(this%stored,2))
+   integer(int32) :: index
+
+   integer(int32) :: i, address
+   integer(int32), parameter :: maxiter = 5000
+   type(table_arr${k}$_t), allocatable :: thistmp
+
+   address = seed_hash
+
+   do i = 1, min(this%nel, maxiter) - 1
+    address = iand(hash(c, address), this%nel - 1) + 1
+
+    if (this%id(address) .eq. 0) then
+     index = 0
+     return
+    else !occupied
+     if (all(this%stored(this%id(address),:) .eq. c)) then
+      index = this%id(address)
+      return
+     end if
+    end if
+   end do
+
+   index = -1
+
+  end function
+
+  subroutine writetable_table_arr${k}$_t(this, namefile)
+   class(table_arr${k}$_t), intent(in) :: this
+   character(*), intent(in) :: namefile
+
+   integer :: i, un
+
+   open (newunit=un, file=namefile, action='write')
+   do i = 1, this%filled
+    write (un, '(i0,*(1x,g0))') i, this%get(i)
+   end do
+   close (un)
+
+  end subroutine
+
+ #:endfor
+
 
 end module
