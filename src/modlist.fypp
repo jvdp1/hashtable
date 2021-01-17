@@ -1,0 +1,262 @@
+#:set TYPES = list(zip(["character(len=:)","integer(int32)", "real(real32)"],["char","int32","real32"],["character(len=*)","integer(int32)","real(real32)"]))
+module modlist
+ use iso_fortran_env,only:int32,real32
+ use modhash, only: roundinguppower2, seed_hash, hash
+ implicit none
+ private
+ #:for t,k,l in TYPES
+ public::list${k}$_t
+ #:endfor
+
+ type, abstract :: listabstrat_t
+  private
+  integer(int32) :: filled
+  integer(int32) :: nel
+  integer(int32),allocatable::id(:)
+  contains
+  procedure(int_destroy_listabstract_t),public,deferred :: destroy 
+  procedure :: destroy_listabstract_t
+ end type
+
+ abstract interface
+  pure subroutine int_destroy_listabstract_t(this)
+   import::listabstrat_t
+   class(listabstrat_t),intent(inout)::this
+  end subroutine
+ end interface
+
+
+
+ #:for t,k,l in TYPES
+ type,extends(listabstrat_t)::list${k}$_t !(k)
+  private
+  !integer, len :: k
+  !character(len=k),allocatable::stored(:)
+  ${t}$,allocatable::stored(:)
+  contains
+  private
+  procedure, public :: add => add_list${k}$_t
+  procedure :: destroy => destroy_list${k}$_t
+  procedure, public :: get => get_list${k}$_t
+  procedure, public :: getindex => getindex_list${k}$_t
+  procedure, public :: writetable => writetable_list${k}$_t
+  final :: destroy_list${k}$_t_scal, destroy_list${k}$_t_array1
+ end type
+
+ interface list${k}$_t
+  module procedure constructor_list${k}$_t
+ end interface
+
+ #:endfor
+
+contains
+
+pure subroutine destroy_listabstract_t(this)
+ class(listabstrat_t), intent(inout) :: this
+
+ this%filled=0
+ this%nel=0
+ if(allocated(this%id))deallocate(this%id)
+
+end subroutine
+
+
+
+#:for t,k,l in TYPES
+pure function constructor_list${k}$_t(k,nel) result(this)
+ type(list${k}$_t) :: this
+ integer(kind=int32),intent(in), optional :: k
+ integer(kind=int32),intent(in), optional :: nel
+
+ this%nel = roundinguppower2(10)
+ if(present(nel)) this%nel = roundinguppower2(nel)
+
+ this%filled=0
+
+ allocate(this%id(this%nel))
+ this%id=0
+
+ #:if k[0] == 'c'
+ allocate(character(len=k) :: this%stored(this%nel))
+ this%stored = ''
+ #:else
+ allocate(this%stored(this%nel))
+ this%stored = 0
+ #:endif
+
+end function
+
+recursive subroutine add_list${k}$_t(this, c, index, lnew)
+ class(list${k}$_t), intent(inout) :: this
+ ${l}$,intent(in) :: c
+ integer(int32),intent(out),optional :: index
+ logical, intent(out), optional :: lnew
+
+ integer(int32) :: i, address
+ integer(int32),parameter :: maxiter = 5000
+
+ if(real(this%filled).gt.0.80*this%nel)call increase_size()
+
+ address = seed_hash
+
+ do i = 1, min(this%nel,maxiter)-1
+  address = iand( hash(c, address), this%nel - 1) + 1
+
+  if(this%id(address).eq.0)then
+   this%filled = this%filled + 1
+   this%id(address) = this%filled
+   this%stored(this%id(address)) = c
+   if(present(index)) index = this%id(address)
+   if(present(lnew)) lnew = .true.
+   return
+  else !already occupied
+   if(this%stored(this%id(address)).eq.c)then
+    if(present(index)) index = this%id(address)
+    if(present(lnew)) lnew = .false.
+    return
+   endif
+  endif
+ enddo
+
+ call increase_size()
+
+ address = seed_hash
+
+ do i = 1, min(this%nel,maxiter)-1
+  address = iand( hash(c, address), this%nel - 1) + 1
+
+  if(this%id(address).eq.0)then
+   this%filled = this%filled + 1
+   this%id(address) = this%filled
+   this%stored(this%id(address)) = c
+   if(present(index)) index = this%id(address)
+   if(present(lnew)) lnew = .true.
+   return
+  else !already occupied
+   if(this%stored(this%id(address)).eq.c)then
+    if(present(index)) index = this%id(address)
+    if(present(lnew)) lnew = .false.
+    return
+   endif
+  endif
+ enddo
+
+
+ address = -1
+ if(present(index)) index = -1
+
+ error stop 'too many collisions'
+
+ contains
+
+  subroutine increase_size()
+   type(list${k}$_t) :: thistmp
+
+   #:if k[0] == 'c'
+   thistmp = list${k}$_t(len(this%stored), nel = int(this%nel*1.5, int32))
+   #:else
+   thistmp = list${k}$_t(nel = int(this%nel*1.5, int32))
+   #:endif
+  
+   do i = 1, this%filled
+    call thistmp%add(this%stored(i))
+   enddo
+  
+   this%filled = thistmp%filled
+   this%nel = thistmp%nel
+   if(allocated(this%id)) deallocate(this%id)
+   if(allocated(this%stored)) deallocate(this%stored)
+   call move_alloc(thistmp%id,this%id)
+   call move_alloc(thistmp%stored,this%stored)
+  
+  end subroutine
+
+end subroutine
+
+pure subroutine destroy_list${k}$_t(this)
+ class(list${k}$_t), intent(inout) :: this
+
+ call this%destroy_listabstract_t
+
+ if(allocated(this%stored))deallocate(this%stored)
+
+end subroutine
+
+
+pure subroutine destroy_list${k}$_t_scal(this)
+ type(list${k}$_t), intent(inout) :: this
+
+ call this%destroy()
+
+end subroutine
+
+pure subroutine destroy_list${k}$_t_array1(this)
+ type(list${k}$_t), intent(inout) :: this(:)
+
+ integer :: i
+
+ do i = 1, size(this)
+  call this(i)%destroy()
+ enddo
+
+end subroutine
+
+pure function get_list${k}$_t(this, index) result(c)
+ class(list${k}$_t), intent(in) :: this
+ integer(int32), intent(in) :: index
+ #:if k[0] == 'c'
+ character(len=len(this%stored)) :: c
+ #:else
+ ${t}$ :: c
+ #:endif
+
+ c = this%stored(index)
+
+end function
+
+pure function getindex_list${k}$_t(this, c) result(index)
+ class(list${k}$_t), intent(in) :: this
+ ${l}$,intent(in) :: c
+ integer(int32) :: index
+
+ integer(int32) :: i, address
+ integer(int32),parameter :: maxiter = 5000
+ type(list${k}$_t),allocatable :: thistmp
+
+ address = seed_hash
+
+ do i = 1, min(this%nel,maxiter)-1
+  address = iand( hash(c, address), this%nel - 1) + 1
+
+  if(this%id(address).eq.0)then
+   index=0
+   return
+  else !occupied
+   if(this%stored(this%id(address)).eq.c)then
+    index = this%id(address)
+    return
+   endif
+  endif
+ enddo
+
+ index = -1
+
+end function
+
+subroutine writetable_list${k}$_t(this, namefile)
+ class(list${k}$_t), intent(in) :: this
+ character(*), intent(in) :: namefile
+
+ integer :: i, un
+ 
+ open(newunit=un, file=namefile, action = 'write')
+ do i = 1, this%filled
+  write(un,'(i0,x,g0)')i,this%get(i)
+ enddo
+ close(un)
+
+end subroutine
+
+#:endfor
+
+end module
