@@ -18,8 +18,11 @@ module modtable
   integer(int32) :: nel
   integer(int32), allocatable :: id(:)
  contains
+  private
   procedure(int_destroy_tableabstract_t), public, deferred :: destroy
   procedure :: destroy_tableabstract_t
+  procedure, public :: getfilled => getfilled_tableabstract_t
+  procedure, public :: getsize => getsize_tableabstract_t
  end type
 
  abstract interface
@@ -85,6 +88,26 @@ contains
   if (allocated(this%id)) deallocate (this%id)
 
  end subroutine
+
+
+ pure function getfilled_tableabstract_t(this) result(filled)
+  class(tableabstrat_t), intent(in) :: this
+  integer(int32) :: filled
+
+  filled = this%filled
+
+ end function
+
+ pure function getsize_tableabstract_t(this) result(nel)
+  class(tableabstrat_t), intent(in) :: this
+  integer(int32) :: nel
+
+  nel = this%nel
+
+ end function
+
+
+
 
  #:for t,k,l in TYPES
   #:if k[0] == 'c'

@@ -20,7 +20,7 @@ contains
   integer(int32) :: lenk, length, i, j
   integer(int32), allocatable :: kint32(:)
 
-  lenk = len(k)
+  lenk = len_trim(k)
 
   length = int(lenk/4_int32)
   if (mod(lenk, 4) .ne. 0) length = length + 1
