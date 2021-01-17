@@ -59,10 +59,14 @@ contains
  end subroutine
 
  #:for t,k,l in TYPES
+  #:if k[0] == 'c'
   pure function constructor_table${k}$_t(k, nel) result(this)
-   type(table${k}$_t) :: this
-   integer(kind=int32), intent(in), optional :: k
+   integer(kind=int32), intent(in) :: k
+  #:else
+  pure function constructor_table${k}$_t(nel) result(this)
+  #:endif
    integer(kind=int32), intent(in), optional :: nel
+   type(table${k}$_t) :: this
 
    this%nel = roundinguppower2(10)
    if (present(nel)) this%nel = roundinguppower2(nel)
