@@ -54,10 +54,8 @@ module modtable
 
 
  #:for t,k,l in NTYPES
-  type, extends(tableabstrat_t) :: table_arr${k}$_t !(k)
+  type, extends(tableabstrat_t) :: table_arr${k}$_t
    private
-   !integer, len :: k
-   !character(len=k),allocatable::stored(:)
    ${t}$, allocatable ::stored(:,:)
   contains
    private
@@ -301,14 +299,14 @@ contains
    allocate (this%id(this%nel))
    this%id = 0
 
-   allocate (this%stored(this%nel,k))
+   allocate (this%stored(k,this%nel))
    this%stored = 0
 
   end function
 
   recursive subroutine add_table_arr${k}$_t(this, c, index, lnew)
    class(table_arr${k}$_t), intent(inout) :: this
-   ${l}$, intent(in) :: c(size(this%stored,2))
+   ${l}$, intent(in) :: c(size(this%stored,1))
    integer(int32), intent(out), optional :: index
    logical, intent(out), optional :: lnew
 
@@ -325,12 +323,12 @@ contains
     if (this%id(address) .eq. 0) then
      this%filled = this%filled + 1
      this%id(address) = this%filled
-     this%stored(this%id(address),:) = c
+     this%stored(:,this%id(address)) = c
      if (present(index)) index = this%id(address)
      if (present(lnew)) lnew = .true.
      return
     else !already occupied
-     if (all(this%stored(this%id(address),:) .eq. c)) then
+     if (all(this%stored(:,this%id(address)) .eq. c)) then
       if (present(index)) index = this%id(address)
       if (present(lnew)) lnew = .false.
       return
@@ -348,12 +346,12 @@ contains
     if (this%id(address) .eq. 0) then
      this%filled = this%filled + 1
      this%id(address) = this%filled
-     this%stored(this%id(address),:) = c
+     this%stored(:,this%id(address)) = c
      if (present(index)) index = this%id(address)
      if (present(lnew)) lnew = .true.
      return
     else !already occupied
-     if (all(this%stored(this%id(address),:) .eq. c)) then
+     if (all(this%stored(:,this%id(address)) .eq. c)) then
       if (present(index)) index = this%id(address)
       if (present(lnew)) lnew = .false.
       return
@@ -371,10 +369,10 @@ contains
    subroutine increase_size()
     type(table_arr${k}$_t) :: thistmp
 
-     thistmp = table_arr${k}$_t(size(this%stored,2), nel=int(this%nel*1.5, int32))
+     thistmp = table_arr${k}$_t(size(this%stored,1), nel=int(this%nel*1.5, int32))
 
     do i = 1, this%filled
-     call thistmp%add(this%stored(i,:))
+     call thistmp%add(this%stored(:,i))
     end do
 
     this%filled = thistmp%filled
@@ -418,15 +416,15 @@ contains
   pure function get_table_arr${k}$_t(this, index) result(c)
    class(table_arr${k}$_t), intent(in) :: this
    integer(int32), intent(in) :: index
-   ${t}$ :: c(size(this%stored,2))
+   ${t}$ :: c(size(this%stored,1))
 
-   c = this%stored(index,:)
+   c = this%stored(:,index)
 
   end function
 
   pure function getindex_table_arr${k}$_t(this, c) result(index)
    class(table_arr${k}$_t), intent(in) :: this
-   ${l}$, intent(in) :: c(size(this%stored,2))
+   ${l}$, intent(in) :: c(size(this%stored,1))
    integer(int32) :: index
 
    integer(int32) :: i, address
@@ -442,7 +440,7 @@ contains
      index = 0
      return
     else !occupied
-     if (all(this%stored(this%id(address),:) .eq. c)) then
+     if (all(this%stored(:,this%id(address)) .eq. c)) then
       index = this%id(address)
       return
      end if
