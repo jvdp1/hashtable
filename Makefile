@@ -1,7 +1,7 @@
 # Fortran stdlib Makefile
 
-FC = gfortran
-FFLAGS = -Wall -Wextra -Wimplicit-interface -fPIC -g -fcheck=all
+FC = ifort
+FFLAGS = -g -check all -traceback
 FYPPFLAGS=
 
 export FC

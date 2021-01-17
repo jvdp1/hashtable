@@ -17,7 +17,7 @@ pure function hashchar(k, seed) result(c)
  integer(int32), intent(in), optional :: seed
  integer(int32) :: c
  
- integer(int32) :: lenk, length, i
+ integer(int32) :: lenk, length, i, j
  integer(int32), allocatable :: kint32(:)
 
  lenk = len(k)
@@ -27,8 +27,10 @@ pure function hashchar(k, seed) result(c)
 
  allocate(kint32(length))
 
+ j=1
  do i=1,lenk,4
-  kint32(i) = transfer(k(i:min(i+3,lenk)),kint32(i))
+  kint32(j) = transfer(k(i:min(i+3,lenk)),kint32(i))
+  j=j+1
  enddo
  
  if(present(seed))then
