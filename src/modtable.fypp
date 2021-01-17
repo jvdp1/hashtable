@@ -1,262 +1,256 @@
 #:set TYPES = list(zip(["character(len=:)","integer(int32)", "real(real32)"],["char","int32","real32"],["character(len=*)","integer(int32)","real(real32)"]))
 module modtable
- use iso_fortran_env,only:int32,real32
+ use iso_fortran_env, only: int32, real32
  use modhash, only: roundinguppower2, seed_hash, hash
  implicit none
  private
  #:for t,k,l in TYPES
- public::table${k}$_t
+  public::table${k}$_t
  #:endfor
 
  type, abstract :: tableabstrat_t
   private
   integer(int32) :: filled
   integer(int32) :: nel
-  integer(int32),allocatable::id(:)
-  contains
-  procedure(int_destroy_tableabstract_t),public,deferred :: destroy 
+  integer(int32), allocatable :: id(:)
+ contains
+  procedure(int_destroy_tableabstract_t), public, deferred :: destroy
   procedure :: destroy_tableabstract_t
  end type
 
  abstract interface
   pure subroutine int_destroy_tableabstract_t(this)
    import::tableabstrat_t
-   class(tableabstrat_t),intent(inout)::this
+   class(tableabstrat_t), intent(inout) :: this
   end subroutine
  end interface
 
-
-
  #:for t,k,l in TYPES
- type,extends(tableabstrat_t)::table${k}$_t !(k)
-  private
-  !integer, len :: k
-  !character(len=k),allocatable::stored(:)
-  ${t}$,allocatable::stored(:)
+  type, extends(tableabstrat_t) :: table${k}$_t !(k)
+   private
+   !integer, len :: k
+   !character(len=k),allocatable::stored(:)
+   ${t}$, allocatable ::stored(:)
   contains
-  private
-  procedure, public :: add => add_table${k}$_t
-  procedure :: destroy => destroy_table${k}$_t
-  procedure, public :: get => get_table${k}$_t
-  procedure, public :: getindex => getindex_table${k}$_t
-  procedure, public :: writetable => writetable_table${k}$_t
-  final :: destroy_table${k}$_t_scal, destroy_table${k}$_t_array1
- end type
+   private
+   procedure, public :: add => add_table${k}$_t
+   procedure :: destroy => destroy_table${k}$_t
+   procedure, public :: get => get_table${k}$_t
+   procedure, public :: getindex => getindex_table${k}$_t
+   procedure, public :: writetable => writetable_table${k}$_t
+   final :: destroy_table${k}$_t_scal, destroy_table${k}$_t_array1
+  end type
 
- interface table${k}$_t
-  module procedure constructor_table${k}$_t
- end interface
+  interface table${k}$_t
+   module procedure constructor_table${k}$_t
+  end interface
 
  #:endfor
 
 contains
 
-pure subroutine destroy_tableabstract_t(this)
- class(tableabstrat_t), intent(inout) :: this
+ pure subroutine destroy_tableabstract_t(this)
+  class(tableabstrat_t), intent(inout) :: this
 
- this%filled=0
- this%nel=0
- if(allocated(this%id))deallocate(this%id)
+  this%filled = 0
+  this%nel = 0
+  if (allocated(this%id)) deallocate (this%id)
 
-end subroutine
+ end subroutine
 
+ #:for t,k,l in TYPES
+  pure function constructor_table${k}$_t(k, nel) result(this)
+   type(table${k}$_t) :: this
+   integer(kind=int32), intent(in), optional :: k
+   integer(kind=int32), intent(in), optional :: nel
 
+   this%nel = roundinguppower2(10)
+   if (present(nel)) this%nel = roundinguppower2(nel)
 
-#:for t,k,l in TYPES
-pure function constructor_table${k}$_t(k,nel) result(this)
- type(table${k}$_t) :: this
- integer(kind=int32),intent(in), optional :: k
- integer(kind=int32),intent(in), optional :: nel
+   this%filled = 0
 
- this%nel = roundinguppower2(10)
- if(present(nel)) this%nel = roundinguppower2(nel)
-
- this%filled=0
-
- allocate(this%id(this%nel))
- this%id=0
-
- #:if k[0] == 'c'
- allocate(character(len=k) :: this%stored(this%nel))
- this%stored = ''
- #:else
- allocate(this%stored(this%nel))
- this%stored = 0
- #:endif
-
-end function
-
-recursive subroutine add_table${k}$_t(this, c, index, lnew)
- class(table${k}$_t), intent(inout) :: this
- ${l}$,intent(in) :: c
- integer(int32),intent(out),optional :: index
- logical, intent(out), optional :: lnew
-
- integer(int32) :: i, address
- integer(int32),parameter :: maxiter = 5000
-
- if(real(this%filled).gt.0.80*this%nel)call increase_size()
-
- address = seed_hash
-
- do i = 1, min(this%nel,maxiter)-1
-  address = iand( hash(c, address), this%nel - 1) + 1
-
-  if(this%id(address).eq.0)then
-   this%filled = this%filled + 1
-   this%id(address) = this%filled
-   this%stored(this%id(address)) = c
-   if(present(index)) index = this%id(address)
-   if(present(lnew)) lnew = .true.
-   return
-  else !already occupied
-   if(this%stored(this%id(address)).eq.c)then
-    if(present(index)) index = this%id(address)
-    if(present(lnew)) lnew = .false.
-    return
-   endif
-  endif
- enddo
-
- call increase_size()
-
- address = seed_hash
-
- do i = 1, min(this%nel,maxiter)-1
-  address = iand( hash(c, address), this%nel - 1) + 1
-
-  if(this%id(address).eq.0)then
-   this%filled = this%filled + 1
-   this%id(address) = this%filled
-   this%stored(this%id(address)) = c
-   if(present(index)) index = this%id(address)
-   if(present(lnew)) lnew = .true.
-   return
-  else !already occupied
-   if(this%stored(this%id(address)).eq.c)then
-    if(present(index)) index = this%id(address)
-    if(present(lnew)) lnew = .false.
-    return
-   endif
-  endif
- enddo
-
-
- address = -1
- if(present(index)) index = -1
-
- error stop 'too many collisions'
-
- contains
-
-  subroutine increase_size()
-   type(table${k}$_t) :: thistmp
+   allocate (this%id(this%nel))
+   this%id = 0
 
    #:if k[0] == 'c'
-   thistmp = table${k}$_t(len(this%stored), nel = int(this%nel*1.5, int32))
+    allocate (character(len=k) :: this%stored(this%nel))
+    this%stored = ''
    #:else
-   thistmp = table${k}$_t(nel = int(this%nel*1.5, int32))
+    allocate (this%stored(this%nel))
+    this%stored = 0
    #:endif
-  
-   do i = 1, this%filled
-    call thistmp%add(this%stored(i))
-   enddo
-  
-   this%filled = thistmp%filled
-   this%nel = thistmp%nel
-   if(allocated(this%id)) deallocate(this%id)
-   if(allocated(this%stored)) deallocate(this%stored)
-   call move_alloc(thistmp%id,this%id)
-   call move_alloc(thistmp%stored,this%stored)
-  
+
+  end function
+
+  recursive subroutine add_table${k}$_t(this, c, index, lnew)
+   class(table${k}$_t), intent(inout) :: this
+   ${l}$, intent(in) :: c
+   integer(int32), intent(out), optional :: index
+   logical, intent(out), optional :: lnew
+
+   integer(int32) :: i, address
+   integer(int32), parameter :: maxiter = 5000
+
+   if (real(this%filled) .gt. 0.80*this%nel) call increase_size()
+
+   address = seed_hash
+
+   do i = 1, min(this%nel, maxiter) - 1
+    address = iand(hash(c, address), this%nel - 1) + 1
+
+    if (this%id(address) .eq. 0) then
+     this%filled = this%filled + 1
+     this%id(address) = this%filled
+     this%stored(this%id(address)) = c
+     if (present(index)) index = this%id(address)
+     if (present(lnew)) lnew = .true.
+     return
+    else !already occupied
+     if (this%stored(this%id(address)) .eq. c) then
+      if (present(index)) index = this%id(address)
+      if (present(lnew)) lnew = .false.
+      return
+     end if
+    end if
+   end do
+
+   call increase_size()
+
+   address = seed_hash
+
+   do i = 1, min(this%nel, maxiter) - 1
+    address = iand(hash(c, address), this%nel - 1) + 1
+
+    if (this%id(address) .eq. 0) then
+     this%filled = this%filled + 1
+     this%id(address) = this%filled
+     this%stored(this%id(address)) = c
+     if (present(index)) index = this%id(address)
+     if (present(lnew)) lnew = .true.
+     return
+    else !already occupied
+     if (this%stored(this%id(address)) .eq. c) then
+      if (present(index)) index = this%id(address)
+      if (present(lnew)) lnew = .false.
+      return
+     end if
+    end if
+   end do
+
+   address = -1
+   if (present(index)) index = -1
+
+   error stop 'too many collisions'
+
+  contains
+
+   subroutine increase_size()
+    type(table${k}$_t) :: thistmp
+
+    #:if k[0] == 'c'
+     thistmp = table${k}$_t(len(this%stored), nel=int(this%nel*1.5, int32))
+    #:else
+     thistmp = table${k}$_t(nel=int(this%nel*1.5, int32))
+    #:endif
+
+    do i = 1, this%filled
+     call thistmp%add(this%stored(i))
+    end do
+
+    this%filled = thistmp%filled
+    this%nel = thistmp%nel
+    if (allocated(this%id)) deallocate (this%id)
+    if (allocated(this%stored)) deallocate (this%stored)
+    call move_alloc(thistmp%id, this%id)
+    call move_alloc(thistmp%stored, this%stored)
+
+   end subroutine
+
   end subroutine
 
-end subroutine
+  pure subroutine destroy_table${k}$_t(this)
+   class(table${k}$_t), intent(inout) :: this
 
-pure subroutine destroy_table${k}$_t(this)
- class(table${k}$_t), intent(inout) :: this
+   call this%destroy_tableabstract_t
 
- call this%destroy_tableabstract_t
+   if (allocated(this%stored)) deallocate (this%stored)
 
- if(allocated(this%stored))deallocate(this%stored)
+  end subroutine
 
-end subroutine
+  pure subroutine destroy_table${k}$_t_scal(this)
+   type(table${k}$_t), intent(inout) :: this
 
+   call this%destroy()
 
-pure subroutine destroy_table${k}$_t_scal(this)
- type(table${k}$_t), intent(inout) :: this
+  end subroutine
 
- call this%destroy()
+  pure subroutine destroy_table${k}$_t_array1(this)
+   type(table${k}$_t), intent(inout) :: this(:)
 
-end subroutine
+   integer :: i
 
-pure subroutine destroy_table${k}$_t_array1(this)
- type(table${k}$_t), intent(inout) :: this(:)
+   do i = 1, size(this)
+    call this(i)%destroy()
+   end do
 
- integer :: i
+  end subroutine
 
- do i = 1, size(this)
-  call this(i)%destroy()
- enddo
+  pure function get_table${k}$_t(this, index) result(c)
+   class(table${k}$_t), intent(in) :: this
+   integer(int32), intent(in) :: index
+   #:if k[0] == 'c'
+    character(len=len(this%stored)) :: c
+   #:else
+    ${t}$ :: c
+   #:endif
 
-end subroutine
+   c = this%stored(index)
 
-pure function get_table${k}$_t(this, index) result(c)
- class(table${k}$_t), intent(in) :: this
- integer(int32), intent(in) :: index
- #:if k[0] == 'c'
- character(len=len(this%stored)) :: c
- #:else
- ${t}$ :: c
- #:endif
+  end function
 
- c = this%stored(index)
+  pure function getindex_table${k}$_t(this, c) result(index)
+   class(table${k}$_t), intent(in) :: this
+   ${l}$, intent(in) :: c
+   integer(int32) :: index
 
-end function
+   integer(int32) :: i, address
+   integer(int32), parameter :: maxiter = 5000
+   type(table${k}$_t), allocatable :: thistmp
 
-pure function getindex_table${k}$_t(this, c) result(index)
- class(table${k}$_t), intent(in) :: this
- ${l}$,intent(in) :: c
- integer(int32) :: index
+   address = seed_hash
 
- integer(int32) :: i, address
- integer(int32),parameter :: maxiter = 5000
- type(table${k}$_t),allocatable :: thistmp
+   do i = 1, min(this%nel, maxiter) - 1
+    address = iand(hash(c, address), this%nel - 1) + 1
 
- address = seed_hash
+    if (this%id(address) .eq. 0) then
+     index = 0
+     return
+    else !occupied
+     if (this%stored(this%id(address)) .eq. c) then
+      index = this%id(address)
+      return
+     end if
+    end if
+   end do
 
- do i = 1, min(this%nel,maxiter)-1
-  address = iand( hash(c, address), this%nel - 1) + 1
+   index = -1
 
-  if(this%id(address).eq.0)then
-   index=0
-   return
-  else !occupied
-   if(this%stored(this%id(address)).eq.c)then
-    index = this%id(address)
-    return
-   endif
-  endif
- enddo
+  end function
 
- index = -1
+  subroutine writetable_table${k}$_t(this, namefile)
+   class(table${k}$_t), intent(in) :: this
+   character(*), intent(in) :: namefile
 
-end function
+   integer :: i, un
 
-subroutine writetable_table${k}$_t(this, namefile)
- class(table${k}$_t), intent(in) :: this
- character(*), intent(in) :: namefile
+   open (newunit=un, file=namefile, action='write')
+   do i = 1, this%filled
+    write (un, '(i0,1x,g0)') i, this%get(i)
+   end do
+   close (un)
 
- integer :: i, un
- 
- open(newunit=un, file=namefile, action = 'write')
- do i = 1, this%filled
-  write(un,'(i0,1x,g0)')i,this%get(i)
- enddo
- close(un)
+  end subroutine
 
-end subroutine
-
-#:endfor
+ #:endfor
 
 end module
