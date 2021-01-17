@@ -1,30 +1,17 @@
 program test_table
- use iso_fortran_env, only: int32
+ use iso_fortran_env, only: int32,real32
  use modtable, only: tablechar_t, tableint32_t, tablereal32_t, table_arrint32_t
  implicit none
  integer(int32) :: pos
- type(tableint32_t) :: table32
- type(tablereal32_t) :: tabler32
  type(table_arrint32_t) :: tablearri32
 
 
  call test_char()
  call test_int32()
+ call test_real32()
 
 
- table32 = tableint32_t()
 
- call table32%add(1)
- call table32%add(2)
- call table32%add(5)
- call table32%writetable('tableint32.dat')
-
- tabler32 = tablereal32_t()
-
- call tabler32%add(1.)
- call tabler32%add(2.)
- call tabler32%add(5.)
- call tabler32%writetable('tablereal32.dat')
 
 
  tablearri32 = table_arrint32_t(3)
@@ -224,7 +211,7 @@ subroutine test_int32()
  call check(table%getindex(333) == 6,'int32: issue with getindex 0')
  call check(table%getindex(22) == 5,'int32: issue with getindex 1')
 
- call check(table%getindex(huge(i)) == -1,'int32: issue with getindex 2')
+ call check(table%getindex(huge(k)) == -1,'int32: issue with getindex 2')
 
  call check(table%get(10) == 19,'int32: issue with get 0')
  call check(table%get(6) == 333,'int32: issue with get 1')
@@ -259,6 +246,114 @@ subroutine test_int32()
 
 end subroutine
 
+subroutine test_real32()
+ type(tablereal32_t) :: table
+ type(tablereal32_t) :: table1
+
+ integer :: i,j, io, un
+ real(real32) :: k
+ character(len=:), allocatable :: namefile
+ logical :: lnew
+
+ table = tablereal32_t(nel=5)
+
+ call check(table%getsize() == 8, 'real32: issue with initial size')
+ call check(table%getfilled() == 0, 'real32: issue with initial filled')
+
+ !empty file
+ namefile='table_real32.dat'
+ call table%writetable(namefile)
+ open(newunit=un,file=namefile,status='old',action='read',iostat=io)
+ call check(io == 0, 'issue with empty '//namefile)
+  
+ i=0
+ do
+  read(un,*,iostat=io)
+  if(io.ne.0)exit
+  i=i+1
+ enddo
+ call check(i == 0, 'issue with empty '//namefile//': file not empty')
+ call check(io == -1, 'io: issue with empty '//namefile)
+
+ call table%add(10.)
+ call check(table%getfilled()==1 .and. table%getsize()==8, 'real32: issue 1')
+
+ call table%add(11.)
+ call check(table%getfilled()==2 .and. table%getsize()==8, 'real32: issue 2')
+
+ call table%add(111.)
+ call check(table%getfilled()==3 .and. table%getsize()==8, 'real32: issue 3')
+
+ call table%add(2222.)
+ call check(table%getfilled()==4 .and. table%getsize()==8, 'real32: issue 4')
+
+ call table%add(22.)
+ call check(table%getfilled()==5 .and. table%getsize()==8, 'real32: issue 5')
+
+ call table%add(333.)
+ call check(table%getfilled()==6 .and. table%getsize()==8, 'real32: issue 6')
+
+ call table%add(444.)
+ call check(table%getfilled()==7 .and. table%getsize()==8, 'real32: issue 7')
+
+ call table%add(5.)
+ call check(table%getfilled()==8 .and. table%getsize()==16, 'real32: issue 8')
+
+ call table%add(5.,lnew = lnew)
+ call check(.not.lnew,'real32: issue lnew 0')
+
+ call table%add(66.,lnew = lnew)
+ call check(lnew,'real32: issue lnew 1')
+
+ call table%add(22., i)
+ call check(i==5, 'real32: issue with index 0')
+
+ call table%add(22., i, lnew)
+ call check(i==5 .and. .not.lnew, 'real32: issue with index 1')
+
+ call table%add(19., i)
+ call check(i==10, 'real32: issue with index 2')
+
+ call table%add(199., i, lnew)
+ call check(i==11 .and. lnew, 'real32: issue with index 3')
+
+ call check(table%getindex(333.) == 6,'real32: issue with getindex 0')
+ call check(table%getindex(22.) == 5,'real32: issue with getindex 1')
+
+ call check(table%getindex(huge(k)) == -1,'real32: issue with getindex 2')
+
+ call check(table%get(10) == 19,'real32: issue with get 0')
+ call check(table%get(6) == 333,'real32: issue with get 1')
+
+ print*,'real32: get outside filled: ',table%get(table%getfilled()+1) !how to test that
+
+ call table%writetable(namefile//'1')
+
+ !read table, add to a new, and check
+ table1=tablereal32_t()
+ namefile=namefile//'1'
+ open(newunit=un,file=namefile,status='old',action='read',iostat=io)
+ call check(io == 0, 'issue with '//namefile)
+  
+ i=0
+ do
+  read(un,*,iostat=io)j,k
+  if(io.ne.0)exit
+  call table1%add(k)
+  call check(table%getindex(k) == table1%getindex(k), 'real32: issue 0 ')
+  call check(table%get(j) == table1%get(j), 'real32: issue 1 ')
+  call check(j == table1%getindex(k), 'real32: issue 2 ')
+  call check(k == table1%get(j), 'real32: issue 3 ')
+  i=i+1
+ enddo
+ call check(io == -1, 'real32: io: issue with '//namefile)
+ call check(i == 11, 'real32: issue with '//namefile//': file not correct')
+
+ call check(table%getfilled() == table1%getfilled(), 'real32: issue table1 0')
+
+ print*,'Succesful real32'
+
+end subroutine
 
  subroutine check(lcheck, a)
   logical, intent(in) :: lcheck
