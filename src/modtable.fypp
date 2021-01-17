@@ -12,6 +12,8 @@ module modtable
   public::table_arr${k}$_t
  #:endfor
 
+ integer(int32), parameter :: default_nel = 5000
+
  type, abstract :: tableabstrat_t
   private
   integer(int32) :: filled
@@ -119,7 +121,7 @@ contains
    integer(kind=int32), intent(in), optional :: nel
    type(table${k}$_t) :: this
 
-   this%nel = roundinguppower2(10)
+   this%nel = roundinguppower2(default_nel)
    if (present(nel)) this%nel = roundinguppower2(nel)
 
    this%filled = 0
@@ -259,6 +261,10 @@ contains
     ${t}$ :: c
    #:endif
 
+   if(index.gt.this%filled) then
+    return !what should be the flag
+   endif
+    
    c = this%stored(index)
 
   end function
@@ -300,7 +306,7 @@ contains
 
    open (newunit=un, file=namefile, action='write')
    do i = 1, this%filled
-    write (un, '(i0,1x,g0)') i, this%get(i)
+    write (un, '(i10,1x,g0)') i, this%get(i)
    end do
    close (un)
 
@@ -314,7 +320,7 @@ contains
    integer(kind=int32), intent(in), optional :: nel
    type(table_arr${k}$_t) :: this
 
-   this%nel = roundinguppower2(10)
+   this%nel = roundinguppower2(default_nel)
    if (present(nel)) this%nel = roundinguppower2(nel)
 
    this%filled = 0
@@ -447,6 +453,10 @@ contains
    integer(int32), intent(in) :: index
    ${t}$ :: c(size(this%stored,1))
 
+   if(index.gt.this%filled) then
+    return !what should be the flag
+   endif
+
    c = this%stored(:,index)
 
   end function
@@ -493,7 +503,7 @@ contains
 
    open (newunit=un, file=namefile, action='write')
    do i = 1, this%filled
-    write (un, '(i0,*(1x,g0))') i, this%get(i)
+    write (un, '(i10,*(1x,g0))') i, this%get(i)
    end do
    close (un)
 
