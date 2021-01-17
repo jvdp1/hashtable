@@ -1,6 +1,9 @@
+SRCFYPP=\
+	modtable.fypp
+
 SRC =\
 	modhash.f90\
-	modtable.f90
+	$(SRCFYPP:.fypp=.f90)
 
 LIB = libhashtable.a
 
@@ -15,7 +18,7 @@ $(LIB): $(OBJS)
 	ar rcs $@ $(OBJS)
 
 clean:
-	$(RM) $(LIB) $(OBJS) $(MODS)
+	$(RM) $(LIB) $(OBJS) $(MODS) $(SRCFYPP:.fypp=.f90)
 
 %.o: %.f90
 	$(FC) $(FFLAGS) -c $<
@@ -25,7 +28,3 @@ clean:
 
 #Fortran module dependencies
 modtable.o: modhash.o
-
-#Fortran sources bult from fypp templates
-modtable.f90: modtable.fypp
-
