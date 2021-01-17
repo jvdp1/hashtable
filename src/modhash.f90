@@ -20,7 +20,7 @@ contains
   integer(int32) :: lenk, length, i, j
   integer(int32), allocatable :: kint32(:)
 
-  lenk = len(k)
+  lenk = len_trim(k)
 
   length = int(lenk/4_int32)
   if (mod(lenk, 4) .ne. 0) length = length + 1
@@ -138,10 +138,11 @@ contains
   integer(int32) :: c
 
   integer(int32) :: lenk, length, i
-  integer(int32), allocatable :: kint32(:)
+  integer(int32) :: kint32(3)
 
-  allocate (kint32(1))
-  kint32 = k
+  kint32(1) = k
+  kint32(2) = 11
+  kint32(3) = seed_hash
 
   if (present(seed)) then
    c = hashint32(kint32, seed)
