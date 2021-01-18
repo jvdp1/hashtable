@@ -1,4 +1,4 @@
-PROGS_SRC = test_hash.f90 test_table.f90
+PROGS_SRC = test_hash.f90 test_table.f90# test_list.f90
 
 CPPFLAGS += -I../src
 LDFLAGS += -L../src -lhashtable

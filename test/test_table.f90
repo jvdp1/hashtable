@@ -159,18 +159,17 @@ subroutine test_int32()
  call table%add(11)
  call check(table%getfilled()==2 .and. table%getsize()==8, 'int32: issue 2')
 
- !increase due to number of collisions
  call table%add(111)
- call check(table%getfilled()==3 .and. table%getsize()==16, 'int32: issue 3')
+ call check(table%getfilled()==3 .and. table%getsize()==8, 'int32: issue 3')
 
  call table%add(2222)
- call check(table%getfilled()==4 .and. table%getsize()==16, 'int32: issue 4')
+ call check(table%getfilled()==4 .and. table%getsize()==8, 'int32: issue 4')
 
  call table%add(22)
- call check(table%getfilled()==5 .and. table%getsize()==16, 'int32: issue 5')
+ call check(table%getfilled()==5 .and. table%getsize()==8, 'int32: issue 5')
 
  call table%add(333)
- call check(table%getfilled()==6 .and. table%getsize()==16, 'int32: issue 6')
+ call check(table%getfilled()==6 .and. table%getsize()==8, 'int32: issue 6')
 
  call table%add(444)
  call check(table%getfilled()==7 .and. table%getsize()==16, 'int32: issue 7')
@@ -282,7 +281,7 @@ subroutine test_real32()
  call check(table%getfilled()==6 .and. table%getsize()==8, 'real32: issue 6')
 
  call table%add(444.)
- call check(table%getfilled()==7 .and. table%getsize()==8, 'real32: issue 7')
+ call check(table%getfilled()==7 .and. table%getsize()==16, 'real32: issue 7')
 
  call table%add(5.)
  call check(table%getfilled()==8 .and. table%getsize()==16, 'real32: issue 8')
@@ -385,16 +384,16 @@ subroutine test_arrint32()
  call check(table%getfilled()==4 .and. table%getsize()==8, '_arrint32: issue 4')
 
  call table%add([22,3,1])
- call check(table%getfilled()==5 .and. table%getsize()==16, '_arrint32: issue 5')
+ call check(table%getfilled()==5 .and. table%getsize()==8, '_arrint32: issue 5')
 
  call table%add([333,1,1])
- call check(table%getfilled()==6 .and. table%getsize()==32, '_arrint32: issue 6')
+ call check(table%getfilled()==6 .and. table%getsize()==16, '_arrint32: issue 6')
 
  call table%add([444,1,1])
- call check(table%getfilled()==7 .and. table%getsize()==32, '_arrint32: issue 7')
+ call check(table%getfilled()==7 .and. table%getsize()==16, '_arrint32: issue 7')
 
  call table%add([5,1,1])
- call check(table%getfilled()==8 .and. table%getsize()==32, '_arrint32: issue 8')
+ call check(table%getfilled()==8 .and. table%getsize()==16, '_arrint32: issue 8')
 
  call table%add([5,1,1],lnew = lnew)
  call check(.not.lnew,'_arrint32: issue lnew 0')
@@ -497,13 +496,13 @@ subroutine test_arrreal32()
  call check(table%getfilled()==5 .and. table%getsize()==8, '_arrreal32: issue 5')
 
  call table%add([333.,1.,1.])
- call check(table%getfilled()==6 .and. table%getsize()==16, '_arrreal32: issue 6')
+ call check(table%getfilled()==6 .and. table%getsize()==8, '_arrreal32: issue 6')
 
  call table%add([444.,1.,1.])
  call check(table%getfilled()==7 .and. table%getsize()==16, '_arrreal32: issue 7')
 
  call table%add([5.,1.,1.])
- call check(table%getfilled()==8 .and. table%getsize()==32, '_arrreal32: issue 8')
+ call check(table%getfilled()==8 .and. table%getsize()==16, '_arrreal32: issue 8')
 
  call table%add([5.,1.,1.],lnew = lnew)
  call check(.not.lnew,'_arrreal32: issue lnew 0')

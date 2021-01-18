@@ -139,21 +139,23 @@ contains
 
   end function
 
-  recursive subroutine add_table${k}$_t(this, c, index, lnew)
+  recursive subroutine add_table${k}$_t(this, c, index, lnew) !, col)
    class(table${k}$_t), intent(inout) :: this
    ${l}$, intent(in) :: c
    integer(int32), intent(out), optional :: index
+   !integer(int32), intent(out), optional :: col
    logical, intent(out), optional :: lnew
 
    integer(int32) :: i, address
+   integer(int32) :: j
    integer(int32), parameter :: maxiter = 5000
 
    if (real(this%filled) .gt. 0.80*this%nel) call increase_size()
 
-   address = seed_hash
+   address = seed_hash - 1
 
    do i = 1, min(this%nel, maxiter) - 1
-    address = iand(hash(c, address), this%nel - 1) + 1
+    address = iand(hash(c, address + i), this%nel - 1) + 1
 
     if (this%id(address) .eq. 0) then
      this%filled = this%filled + 1
@@ -161,11 +163,13 @@ contains
      this%stored(this%id(address)) = c
      if (present(index)) index = this%id(address)
      if (present(lnew)) lnew = .true.
+     !if (present(col)) col = i
      return
     else !already occupied
      if (this%stored(this%id(address)) .eq. c) then
       if (present(index)) index = this%id(address)
       if (present(lnew)) lnew = .false.
+      !if (present(col)) col = i
       return
      end if
     end if
@@ -173,10 +177,10 @@ contains
 
    call increase_size()
 
-   address = seed_hash
+   address = seed_hash - 1
 
    do i = 1, min(this%nel, maxiter) - 1
-    address = iand(hash(c, address), this%nel - 1) + 1
+    address = iand(hash(c, address+i), this%nel - 1) + 1
 
     if (this%id(address) .eq. 0) then
      this%filled = this%filled + 1
@@ -184,11 +188,13 @@ contains
      this%stored(this%id(address)) = c
      if (present(index)) index = this%id(address)
      if (present(lnew)) lnew = .true.
+     !if (present(col)) col = min(this%nel, maxiter) - 1 + i
      return
     else !already occupied
      if (this%stored(this%id(address)) .eq. c) then
       if (present(index)) index = this%id(address)
       if (present(lnew)) lnew = .false.
+      !if (present(col)) col = min(this%nel, maxiter) - 1 + i
       return
      end if
     end if
@@ -282,10 +288,10 @@ contains
    integer(int32), parameter :: maxiter = 5000
    type(table${k}$_t), allocatable :: thistmp
 
-   address = seed_hash
+   address = seed_hash - 1
 
    do i = 1, min(this%nel, maxiter) - 1
-    address = iand(hash(c, address), this%nel - 1) + 1
+    address = iand(hash(c, address + i), this%nel - 1) + 1
 
     if (this%id(address) .eq. 0) then
      index = -1
@@ -354,10 +360,10 @@ contains
 
    if (real(this%filled) .gt. 0.80*this%nel) call increase_size()
 
-   address = seed_hash
+   address = seed_hash - 1
 
    do i = 1, min(this%nel, maxiter) - 1
-    address = iand(hash(c, address), this%nel - 1) + 1
+    address = iand(hash(c, address + i), this%nel - 1) + 1
 
     if (this%id(address) .eq. 0) then
      this%filled = this%filled + 1
@@ -377,10 +383,10 @@ contains
 
    call increase_size()
 
-   address = seed_hash
+   address = seed_hash - 1
 
    do i = 1, min(this%nel, maxiter) - 1
-    address = iand(hash(c, address), this%nel - 1) + 1
+    address = iand(hash(c, address + i), this%nel - 1) + 1
 
     if (this%id(address) .eq. 0) then
      this%filled = this%filled + 1
@@ -480,10 +486,10 @@ contains
     return
    endif
 
-   address = seed_hash
+   address = seed_hash - 1
 
    do i = 1, min(this%nel, maxiter) - 1
-    address = iand(hash(c, address), this%nel - 1) + 1
+    address = iand(hash(c, address + i), this%nel - 1) + 1
 
     if (this%id(address) .eq. 0) then
      index = -1
