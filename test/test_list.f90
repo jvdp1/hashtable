@@ -4,16 +4,18 @@ program test_list
  implicit none
 
  call test_char()
+ call test_int32()
 
 contains
 
  subroutine test_char()
-  integer(int32), parameter :: nchar = 10, nrows = 18000!000
+  integer(int32), parameter :: nchar = 10, nrows = 18000000
   integer(int32) :: i, j, un, n, io
+  integer(int32) :: col
   real :: start, finish
   character(nchar) :: cdummy
   character(nchar), allocatable :: list(:)
-  type(tablechar_t), allocatable :: tablechar
+  type(tablechar_t), allocatable :: table
 
   allocate (list(nrows))
 
@@ -27,32 +29,84 @@ contains
 
   do j = 5, 1, -1
    write (*, '(a,i0)') 'Start char table', j
-   allocate (tablechar)
-   tablechar = tablechar_t(nchar, nrows/j)
+   allocate (table)
+   table = tablechar_t(nchar, nrows/j)
 
-   print *, ' size  : ', tablechar%getsize()
+   print *, ' size  : ', table%getsize()
 
    call cpu_time(start)
    do i = 1, nrows
-    call tablechar%add(list(i))
+    call table%add(list(i))!,col=col)
    end do
    call cpu_time(finish)
 
    print '(" Time = ",f6.3," seconds.")', finish - start
-   print *, ' filled: ', tablechar%getfilled()
-   print *, ' size  : ', tablechar%getsize()
+   print *, ' filled: ', table%getfilled()
+   print *, ' size  : ', table%getsize()
+!   print *, ' col   : ', col
 
    call cpu_time(start)
    do i = nrows, 1, -1
-    call tablechar%add(list(i))
+    call table%add(list(i))
    end do
    call cpu_time(finish)
 
    print '(" Time = ",f6.3," seconds.")', finish - start
-   print *, ' filled: ', tablechar%getfilled()
-   print *, ' size  : ', tablechar%getsize()
+   print *, ' filled: ', table%getfilled()
+   print *, ' size  : ', table%getsize()
 
-   deallocate (tablechar)
+   deallocate (table)
+
+  end do
+
+ end subroutine
+
+ subroutine test_int32()
+  integer(int32), parameter :: nrows = 18000000
+  integer(int32) :: i, j, un, n, io
+  integer(int32) :: col
+  real :: start, finish
+  integer(int32), allocatable :: list(:)
+  type(tableint32_t), allocatable :: table
+
+  allocate (list(nrows))
+
+  open (newunit=un, file='list.dat', status='old', action='read')
+  do i = 1, nrows
+   read (un, *, iostat=io) list(i)
+   if (io .ne. 0) exit
+  end do
+  close (un)
+
+  do j = 5, 1, -1
+   write (*, '(a,i0)') 'Start char table', j
+   allocate (table)
+   table = tableint32_t(nrows/j)
+
+   print *, ' size  : ', table%getsize()
+
+   call cpu_time(start)
+   do i = 1, nrows
+    call table%add(list(i))!,col=col)
+   end do
+   call cpu_time(finish)
+
+   print '(" Time = ",f6.3," seconds.")', finish - start
+   print *, ' filled: ', table%getfilled()
+   print *, ' size  : ', table%getsize()
+!   print *, ' col   : ', col
+
+   call cpu_time(start)
+   do i = nrows, 1, -1
+    call table%add(list(i))
+   end do
+   call cpu_time(finish)
+
+   print '(" Time = ",f6.3," seconds.")', finish - start
+   print *, ' filled: ', table%getfilled()
+   print *, ' size  : ', table%getsize()
+
+   deallocate (table)
 
   end do
 
