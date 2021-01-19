@@ -141,7 +141,6 @@ contains
 
    integer(int32) :: i, address
    integer(int32), parameter :: maxiter = 5000
-   type(table${k}$_t) :: thistmp
 
    if (real(this%filled) .gt. 0.80*this%nel) call increase_size()
 
@@ -279,7 +278,6 @@ contains
 
    integer(int32) :: i, address
    integer(int32), parameter :: maxiter = 5000
-   type(table${k}$_t), allocatable :: thistmp
 
    address = seed_hash - 1
 
