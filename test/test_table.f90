@@ -41,10 +41,10 @@ contains
   call check(i == 0, 'issue with empty '//namefile//': file not empty')
   call check(io == -1, 'io: issue with empty '//namefile)
 
-  call table%add('a')
+  call table%add('a   aaa')
   call check(table%getfilled() == 1 .and. table%getsize() == 8, 'char: issue 1')
 
-  call table%add('ab')
+  call table%add('ab123456')
   call check(table%getfilled() == 2 .and. table%getsize() == 8, 'char: issue 2')
 
   call table%add('abc')
@@ -56,10 +56,10 @@ contains
   call table%add('1')
   call check(table%getfilled() == 5 .and. table%getsize() == 8, 'char: issue 5')
 
-  call table%add('   1')
+  call table%add('    1')
   call check(table%getfilled() == 6 .and. table%getsize() == 8, 'char: issue 6')
 
-  call table%add('    1')
+  call table%add('     1')
   call check(table%getfilled() == 7 .and. table%getsize() == 8, 'char: issue 7')
 
   !increase table
@@ -78,18 +78,18 @@ contains
   call table%add('1', i, lnew)
   call check(i == 5 .and. .not. lnew, 'char: issue with index 1')
 
-  call table%add('?', i)
+  call table%add('?.....&&&&&', i)
   call check(i == 10, 'char: issue with index 2')
 
   call table%add('??', i, lnew)
   call check(i == 11 .and. lnew, 'char: issue with index 3')
 
-  call check(table%getindex('   1') == 6, 'char: issue with getindex 0')
+  call check(table%getindex('    1') == 6, 'char: issue with getindex 0')
   call check(table%getindex('1   ') == 5, 'char: issue with getindex 1')
   call check(table%getindex('xxxx') == -2, 'char: issue with getindex 2')
 
-  call check(table%get(10) == '?', 'char: issue with get 0')
-  call check(table%get(6) == '   1', 'char: issue with get 1')
+  call check(table%get(10) == '?.....&&&&&', 'char: issue with get 0')
+  call check(table%get(6) == '    1', 'char: issue with get 1')
 
   print *, 'char: get outside filled: ', table%get(table%getfilled() + 1) !how to test that
 
