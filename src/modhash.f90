@@ -29,19 +29,19 @@ contains
   allocate (kint32(length))
 
   j = 1
-  do i = 1, modlength, 4
+  do i = 1, modlength*4, 4
    kint32(j) = transfer(k(i:min(i + 3, lenk)), kint32(i))
    j = j + 1
   end do
 
-  select case(mod(lenk,4))
-   case(3)
-    kint32(length) = transfer(k(modlength + 1:)//repeat(' ',1), kint32(i))
-   case(2)
-    kint32(length) = transfer(k(modlength + 1:)//repeat(' ',2), kint32(i))
-   case(1)
-    kint32(length) = transfer(k(modlength + 1:)//repeat(' ',3), kint32(i))
-   case default
+  select case (mod(lenk, 4))
+  case (3)
+   kint32(length) = transfer(k(modlength*4 + 1:lenk)//repeat(' ', 1), kint32(i))
+  case (2)
+   kint32(length) = transfer(k(modlength*4 + 1:lenk)//repeat(' ', 2), kint32(i))
+  case (1)
+   kint32(length) = transfer(k(modlength*4 + 1:lenk)//repeat(' ', 3), kint32(i))
+  case default
   end select
 
   if (present(seed)) then
