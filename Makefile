@@ -2,6 +2,8 @@
 
 FC = ifort
 FFLAGS = -g -check all -traceback -stand f08
+#FC = gfortran
+#FFLAGS = -g -Wall -std=f2008
 FYPPFLAGS=
 
 export FC

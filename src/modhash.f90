@@ -17,21 +17,32 @@ contains
   integer(int32), intent(in), optional :: seed
   integer(int32) :: c
 
-  integer(int32) :: lenk, length, i, j
+  integer(int32) :: modlength, lenk, length, i, j
   integer(int32), allocatable :: kint32(:)
 
   lenk = len_trim(k)
+  modlength = int(lenk/4_int32)
 
-  length = int(lenk/4_int32)
+  length = modlength
   if (mod(lenk, 4) .ne. 0) length = length + 1
 
   allocate (kint32(length))
 
   j = 1
-  do i = 1, lenk, 4
+  do i = 1, modlength, 4
    kint32(j) = transfer(k(i:min(i + 3, lenk)), kint32(i))
    j = j + 1
   end do
+
+  select case(mod(lenk,4))
+   case(3)
+    kint32(length) = transfer(k(modlength + 1:)//repeat(' ',1), kint32(i))
+   case(2)
+    kint32(length) = transfer(k(modlength + 1:)//repeat(' ',2), kint32(i))
+   case(1)
+    kint32(length) = transfer(k(modlength + 1:)//repeat(' ',3), kint32(i))
+   case default
+  end select
 
   if (present(seed)) then
    c = hashint32(kint32, seed)

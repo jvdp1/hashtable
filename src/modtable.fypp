@@ -151,7 +151,6 @@ contains
       #:endif
 
       do i = 1, this%filled
-      print*,i,this%stored(i)
        call thistmp%add(this%stored(i))
       end do
 
@@ -194,7 +193,6 @@ contains
       #:endif
 
       do i = 1, this%filled
-      print*,i,this%stored(i)
        call thistmp%add(this%stored(i))
       end do
 
