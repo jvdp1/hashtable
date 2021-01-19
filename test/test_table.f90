@@ -2,7 +2,6 @@ program test_table
  use iso_fortran_env, only: int32, real32
  use modtable, only: tablechar_t, tableint32_t, tablereal32_t, table_arrint32_t, table_arrreal32_t
  implicit none
- integer(int32) :: pos
 
  call test_char()
  call test_int32()
@@ -87,7 +86,7 @@ contains
 
   call check(table%getindex('   1') == 6, 'char: issue with getindex 0')
   call check(table%getindex('1   ') == 5, 'char: issue with getindex 1')
-  call check(table%getindex('xxxx') == -1, 'char: issue with getindex 2')
+  call check(table%getindex('xxxx') == -2, 'char: issue with getindex 2')
 
   call check(table%get(10) == '?', 'char: issue with get 0')
   call check(table%get(6) == '   1', 'char: issue with get 1')
@@ -196,7 +195,7 @@ contains
   call check(table%getindex(333) == 6, 'int32: issue with getindex 0')
   call check(table%getindex(22) == 5, 'int32: issue with getindex 1')
 
-  call check(table%getindex(huge(k)) == -1, 'int32: issue with getindex 2')
+  call check(table%getindex(huge(k)) == -2, 'int32: issue with getindex 2')
 
   call check(table%get(10) == 19, 'int32: issue with get 0')
   call check(table%get(6) == 333, 'int32: issue with get 1')
@@ -305,7 +304,7 @@ contains
   call check(table%getindex(333.) == 6, 'real32: issue with getindex 0')
   call check(table%getindex(22.) == 5, 'real32: issue with getindex 1')
 
-  call check(table%getindex(huge(k)) == -1, 'real32: issue with getindex 2')
+  call check(table%getindex(huge(k)) == -2, 'real32: issue with getindex 2')
 
   call check(table%get(10) == 19, 'real32: issue with get 0')
   call check(table%get(6) == 333, 'real32: issue with get 1')
