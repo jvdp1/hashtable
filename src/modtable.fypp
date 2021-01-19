@@ -143,24 +143,7 @@ contains
    integer(int32), parameter :: maxiter = 5000
    type(table${k}$_t) :: thistmp
 
-   if (real(this%filled) .gt. 0.80*this%nel) then !call increase_size()
-      #:if k[0] == 'c'
-    thistmp = table${k}$_t(len(this%stored), nel=int(this%nel*1.5, int32))
-      #:else
-    thistmp = table${k}$_t(nel=int(this%nel*1.5, int32))
-      #:endif
-
-    do i = 1, this%filled
-     call thistmp%add(this%stored(i))
-    end do
-
-    this%filled = thistmp%filled
-    this%nel = thistmp%nel
-    if (allocated(this%id)) deallocate (this%id)
-    if (allocated(this%stored)) deallocate (this%stored)
-    call move_alloc(thistmp%id, this%id)
-    call move_alloc(thistmp%stored, this%stored)
-   endif
+   if (real(this%filled) .gt. 0.80*this%nel) call increase_size()
 
    address = seed_hash - 1
 
@@ -185,23 +168,7 @@ contains
     end if
    end do
 
-!     call increase_size()
-      #:if k[0] == 'c'
-   thistmp = table${k}$_t(len(this%stored), nel=int(this%nel*1.5, int32))
-      #:else
-   thistmp = table${k}$_t(nel=int(this%nel*1.5, int32))
-      #:endif
-
-   do i = 1, this%filled
-    call thistmp%add(this%stored(i))
-   end do
-
-   this%filled = thistmp%filled
-   this%nel = thistmp%nel
-   if (allocated(this%id)) deallocate (this%id)
-   if (allocated(this%stored)) deallocate (this%stored)
-   call move_alloc(thistmp%id, this%id)
-   call move_alloc(thistmp%stored, this%stored)
+   call increase_size()
 
    address = seed_hash - 1
 
@@ -231,29 +198,29 @@ contains
 
    error stop 'too many collisions'
 
-!    contains
-!
-!     subroutine increase_size()
-!      type(table${k}$_t) :: thistmp
-!
-!      #:if k[0] == 'c'
-!       thistmp = table${k}$_t(len(this%stored), nel=int(this%nel*1.5, int32))
-!      #:else
-!       thistmp = table${k}$_t(nel=int(this%nel*1.5, int32))
-!      #:endif
-!
-!      do i = 1, this%filled
-!       call thistmp%add(this%stored(i))
-!      end do
-!
-!      this%filled = thistmp%filled
-!      this%nel = thistmp%nel
-!      if (allocated(this%id)) deallocate (this%id)
-!      if (allocated(this%stored)) deallocate (this%stored)
-!      call move_alloc(thistmp%id, this%id)
-!      call move_alloc(thistmp%stored, this%stored)
-!
-!     end subroutine
+    contains
+
+     subroutine increase_size()
+      type(table${k}$_t) :: thistmp
+
+      #:if k[0] == 'c'
+       thistmp = table${k}$_t(len(this%stored), nel=int(this%nel*1.5, int32))
+      #:else
+       thistmp = table${k}$_t(nel=int(this%nel*1.5, int32))
+      #:endif
+
+      do i = 1, this%filled
+       call thistmp%add(this%stored(i))
+      end do
+
+      this%filled = thistmp%filled
+      this%nel = thistmp%nel
+      if (allocated(this%id)) deallocate (this%id)
+      if (allocated(this%stored)) deallocate (this%stored)
+      call move_alloc(thistmp%id, this%id)
+      call move_alloc(thistmp%stored, this%stored)
+
+     end subroutine
 
   end subroutine
 
