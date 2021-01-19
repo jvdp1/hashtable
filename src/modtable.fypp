@@ -1,5 +1,6 @@
-#:set TYPES = list(zip(["character(len=:)","integer(int32)", "real(real32)"],["char","int32","real32"],["character(len=*)","integer(int32)","real(real32)"]))
 #:set NTYPES = list(zip(["integer(int32)", "real(real32)"],["int32","real32"],["integer(int32)","real(real32)"]))
+#:set CTYPES = list(zip(["character(len=:)"],["char"],["character(len=*)"]))
+#:set TYPES = CTYPES + NTYPES
 module modtable
  use iso_fortran_env, only: int32, real32
  use modhash, only: roundinguppower2, seed_hash, hash
