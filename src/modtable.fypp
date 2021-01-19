@@ -44,7 +44,7 @@ module modtable
   contains
    private
    procedure, public :: add => add_table${k}$_t
-   procedure :: destroy => destroy_table${k}$_t
+   procedure, public :: destroy => destroy_table${k}$_t
    procedure, public :: get => get_table${k}$_t
    procedure, public :: getindex => getindex_table${k}$_t
    procedure, public :: writetable => writetable_table${k}$_t
@@ -64,7 +64,7 @@ module modtable
   contains
    private
    procedure, public :: add => add_table_arr${k}$_t
-   procedure :: destroy => destroy_table_arr${k}$_t
+   procedure, public :: destroy => destroy_table_arr${k}$_t
    procedure, public :: get => get_table_arr${k}$_t
    procedure, public :: getindex => getindex_table_arr${k}$_t
    procedure, public :: writetable => writetable_table_arr${k}$_t
