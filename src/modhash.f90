@@ -137,7 +137,6 @@ contains
   integer(int32), intent(in), optional :: seed
   integer(int32) :: c
 
-  integer(int32) :: lenk, length, i
   integer(int32) :: kint32(3)
 
   kint32(1) = k
@@ -156,7 +155,6 @@ contains
   integer(int32), intent(in), optional :: seed
   integer(int32) :: c
 
-  integer(int32) :: lenk, length, i
   integer(int32), allocatable :: kint32(:)
 
   allocate (kint32(1))
