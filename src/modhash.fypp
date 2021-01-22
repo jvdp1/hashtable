@@ -1,3 +1,4 @@
+#:include "common.fypp"
 module modhash
  use iso_fortran_env, only: int32, real32, real64
  implicit none
@@ -51,8 +52,9 @@ contains
   end if
  end function
 
- pure function hashint32(k, seed) result(c)
-  integer(kind=int32), intent(in) :: k(:)
+ #:for t,k,l in NTYPES
+ pure function hash${k}$(k, seed) result(c)
+  ${t}$, intent(in) :: k(:)
   integer(kind=int32), intent(in), optional :: seed
 
   integer(kind=int32) :: length
@@ -72,9 +74,15 @@ contains
 
   pos = 1
   do while (length > 3)
+   #:if k[0] == 'r'
+   a = a + transfer(k(pos), a)
+   b = b + transfer(k(pos + 1), b)
+   c = c + transfer(k(pos + 2), c)
+   #:else
    a = a + k(pos)
    b = b + k(pos + 1)
    c = c + k(pos + 2)
+   #:endif
    call mix(a, b, c)
    length = length - 3
    pos = pos + 3
@@ -82,66 +90,36 @@ contains
 
   select case (length)
   case (1)
+   #:if k[0] == 'r'
+   a = a + transfer(k(pos), a)
+   #:else
    a = a + k(pos)
+   #:endif
   case (2)
+   #:if k[0] == 'r'
+   a = a + transfer(k(pos), a)
+   b = b + transfer(k(pos + 1), b)
+   #:else
    a = a + k(pos)
    b = b + k(pos + 1)
+   #:endif
   case (3)
+   #:if k[0] == 'r'
+   a = a + transfer(k(pos), a)
+   b = b + transfer(k(pos + 1), b)
+   c = c + transfer(k(pos + 2), c)
+   #:else
    a = a + k(pos)
    b = b + k(pos + 1)
    c = c + k(pos + 2)
+   #:endif
   case default
   end select
 
   call final(a, b, c)
 
  end function
-
- pure function hashreal32(k, seed) result(c)
-  real(kind=real32), intent(in) :: k(:)
-  integer(kind=int32), intent(in), optional :: seed
-
-  integer(kind=int32) :: length
-  integer(kind=int32) :: a, b, c
-  integer(kind=int32) :: pos
-
-  integer(kind=int32) :: seed_
-
-  seed_ = seed_hash
-  if (present(seed)) seed_ = seed
-
-  length = size(k)
-
-  a = seed_ + ishft(length, 2)
-  b = a
-  c = a
-
-  pos = 1
-  do while (length > 3)
-   a = a + transfer(k(pos), a)
-   b = b + transfer(k(pos + 1), b)
-   c = c + transfer(k(pos + 2), c)
-   call mix(a, b, c)
-   length = length - 3
-   pos = pos + 3
-  end do
-
-  select case (length)
-  case (1)
-   a = a + transfer(k(pos), a)
-  case (2)
-   a = a + transfer(k(pos), a)
-   b = b + transfer(k(pos + 1), b)
-  case (3)
-   a = a + transfer(k(pos), a)
-   b = b + transfer(k(pos + 1), b)
-   c = c + transfer(k(pos + 2), c)
-  case default
-  end select
-
-  call final(a, b, c)
-
- end function
+ #:endfor
 
  pure function hashint32_scal(k, seed) result(c)
   integer(int32), intent(in) :: k

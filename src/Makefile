@@ -1,10 +1,8 @@
 SRCFYPP=\
+	modhash.fypp\
 	modtable.fypp
 
-SRC =\
-	modhash.f90\
-	$(SRCGEN)
-
+SRC = $(SRCGEN)
 
 LIB = libhashtable.a
 
@@ -25,7 +23,7 @@ clean:
 %.o: %.f90
 	$(FC) $(FFLAGS) -c $<
 
-$(SRCGEN): %.f90: %.fypp
+$(SRCGEN): %.f90: %.fypp common.fypp
 	fypp $(FYPPFLAGS) $< $@
 
 #Fortran module dependencies
