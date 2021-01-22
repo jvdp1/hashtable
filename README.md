@@ -16,11 +16,11 @@ table_arrreal32_t  | Real arrays of 32 bits
 
 ## Public derived type methods
 
-Each derived type contains these ... public methods
+Each derived type contains these 7 public methods.
 
 Method         | Class      | Description
 ---------------|------------|----------------------------------
-`add(element[, index, lnew])`   | Subroutine | Add the element `element` in the DT if not stored yet. The integer `index` (`intent(out), optional`) contains the index of the elements (between 1 and `getfilled(). The logical `lnew` (`intent(out), optional`) is `.true.` if the element is not stored yet. Otherwise it is `.false.`.
+`add(element[, index, lnew])`   | Subroutine | Add the element `element` in the DT if not stored yet. The integer `index` (`intent(out), optional`) contains the index of the elements (between 1 and `getfilled()`. The logical `lnew` (`intent(out), optional`) is `.true.` if the element is not stored yet. Otherwise it is `.false.`.
 `destroy()`            | Function   | Reset all scalars and arrays
 `get(index)`           | Function   | Returns the element stored corresponding to the index `index`.
 `getfilled()`          | Function   | Returns the number of elements stored in the DT
