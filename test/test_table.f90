@@ -1,6 +1,6 @@
 program test_table
  use iso_fortran_env, only: int32, real32
- use modtable, only: tablechar_t, tableint32_t, tablereal32_t, table_arrint32_t, table_arrreal32_t
+ use modtable, only: table_char_t, table_int32_t, table_real32_t, table_arrint32_t, table_arrreal32_t
  implicit none
 
  call test_char()
@@ -12,8 +12,8 @@ program test_table
 
 contains
  subroutine test_char()
-  type(tablechar_t) :: table
-  type(tablechar_t) :: table1
+  type(table_char_t) :: table
+  type(table_char_t) :: table1
 
   integer :: i, j, io, un
   integer, parameter:: lenchar = 12
@@ -21,7 +21,7 @@ contains
   character(len=lenchar):: cdummy
   logical :: lnew
 
-  table = tablechar_t(lenchar, nel=5)
+  table = table_char_t(lenchar, nel=5)
 
   call check(table%getsize() == 8, 'issue with initial size')
   call check(table%getfilled() == 0, 'issue with initial filled')
@@ -96,7 +96,7 @@ contains
   call table%writetable(namefile//'1')
 
   !read table, add to a new, and check
-  table1 = tablechar_t(lenchar)
+  table1 = table_char_t(lenchar)
   namefile = namefile//'1'
   open (newunit=un, file=namefile, status='old', action='read', iostat=io)
   call check(io == 0, 'issue with '//namefile)
@@ -122,15 +122,15 @@ contains
  end subroutine
 
  subroutine test_int32()
-  type(tableint32_t) :: table
-  type(tableint32_t) :: table1
+  type(table_int32_t) :: table
+  type(table_int32_t) :: table1
 
   integer :: i, j, io, un
   integer(int32) :: k
   character(len=:), allocatable :: namefile
   logical :: lnew
 
-  table = tableint32_t(nel=5)
+  table = table_int32_t(nel=5)
 
   call check(table%getsize() == 8, 'int32: issue with initial size')
   call check(table%getfilled() == 0, 'int32: issue with initial filled')
@@ -205,7 +205,7 @@ contains
   call table%writetable(namefile//'1')
 
   !read table, add to a new, and check
-  table1 = tableint32_t()
+  table1 = table_int32_t()
   namefile = namefile//'1'
   open (newunit=un, file=namefile, status='old', action='read', iostat=io)
   call check(io == 0, 'issue with '//namefile)
@@ -231,15 +231,15 @@ contains
  end subroutine
 
  subroutine test_real32()
-  type(tablereal32_t) :: table
-  type(tablereal32_t) :: table1
+  type(table_real32_t) :: table
+  type(table_real32_t) :: table1
 
   integer :: i, j, io, un
   real(real32) :: k
   character(len=:), allocatable :: namefile
   logical :: lnew
 
-  table = tablereal32_t(nel=5)
+  table = table_real32_t(nel=5)
 
   call check(table%getsize() == 8, 'real32: issue with initial size')
   call check(table%getfilled() == 0, 'real32: issue with initial filled')
@@ -314,7 +314,7 @@ contains
   call table%writetable(namefile//'1')
 
   !read table, add to a new, and check
-  table1 = tablereal32_t()
+  table1 = table_real32_t()
   namefile = namefile//'1'
   open (newunit=un, file=namefile, status='old', action='read', iostat=io)
   call check(io == 0, 'issue with '//namefile)

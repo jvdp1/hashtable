@@ -9,14 +9,14 @@ module modhash
 
  interface hash
   #:for t,k,l in NTYPES
-   module procedure hash${k}$
+   module procedure hash_${k}$
   #:endfor
-  module procedure hashchar, hashint32_scal, hashreal32_scal
+  module procedure hash_char, hash_int32_scal, hash_real32_scal
  end interface
 
 contains
 
- pure function hashchar(k, seed) result(c)
+ pure function hash_char(k, seed) result(c)
   character(len=*), intent(in) :: k
   integer(int32), intent(in), optional :: seed
   integer(int32) :: c
@@ -49,14 +49,14 @@ contains
   end select
 
   if (present(seed)) then
-   c = hashint32(kint32, seed)
+   c = hash_int32(kint32, seed)
   else
-   c = hashint32(kint32)
+   c = hash_int32(kint32)
   end if
  end function
 
  #:for t,k,l in NTYPES
- pure function hash${k}$(k, seed) result(c)
+ pure function hash_${k}$(k, seed) result(c)
   ${t}$, intent(in) :: k(:)
   integer(kind=int32), intent(in), optional :: seed
 
@@ -124,7 +124,7 @@ contains
  end function
  #:endfor
 
- pure function hashint32_scal(k, seed) result(c)
+ pure function hash_int32_scal(k, seed) result(c)
   integer(int32), intent(in) :: k
   integer(int32), intent(in), optional :: seed
   integer(int32) :: c
@@ -136,13 +136,13 @@ contains
   kint32(3) = seed_hash
 
   if (present(seed)) then
-   c = hashint32(kint32, seed)
+   c = hash_int32(kint32, seed)
   else
-   c = hashint32(kint32)
+   c = hash_int32(kint32)
   end if
  end function
 
- pure function hashreal32_scal(k, seed) result(c)
+ pure function hash_real32_scal(k, seed) result(c)
   real(real32), intent(in) :: k
   integer(int32), intent(in), optional :: seed
   integer(int32) :: c
@@ -153,9 +153,9 @@ contains
   kint32(1) = transfer(k, kint32(1))
 
   if (present(seed)) then
-   c = hashint32(kint32, seed)
+   c = hash_int32(kint32, seed)
   else
-   c = hashint32(kint32)
+   c = hash_int32(kint32)
   end if
  end function
 

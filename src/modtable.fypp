@@ -5,7 +5,7 @@ module modtable
  implicit none
  private
  #:for t,k,l in TYPES
- public::table${k}$_t
+ public::table_${k}$_t
  #:endfor
  #:for t,k,l in NTYPES
  public::table_arr${k}$_t
@@ -34,7 +34,7 @@ module modtable
  end interface
 
  #:for t,k,l in TYPES
- type, extends(tableabstrat_t) :: table${k}$_t !(k)
+ type, extends(tableabstrat_t) :: table_${k}$_t !(k)
   private
   !integer, len :: k
   !character(len=k),allocatable::stored(:)
@@ -49,7 +49,7 @@ module modtable
   final :: destroy_table${k}$_t_scal, destroy_table${k}$_t_array1
  end type
 
- interface table${k}$_t
+ interface table_${k}$_t
   module procedure constructor_table${k}$_t
  end interface
 
@@ -110,7 +110,7 @@ contains
   pure function constructor_table${k}$_t(nel) result(this)
      #:endif
    integer(kind=int32), intent(in), optional :: nel
-   type(table${k}$_t) :: this
+   type(table_${k}$_t) :: this
 
    this%nel = roundinguppower2(default_nel)
    if (present(nel)) this%nel = roundinguppower2(nel)
@@ -131,7 +131,7 @@ contains
   end function
 
   recursive subroutine add_table${k}$_t(this, c, index, lnew) !, col)
-   class(table${k}$_t), intent(inout) :: this
+   class(table_${k}$_t), intent(inout) :: this
    ${l}$, intent(in) :: c
    integer(int32), intent(out), optional :: index
    !integer(int32), intent(out), optional :: col
@@ -198,12 +198,12 @@ contains
     contains
 
      subroutine increase_size()
-      type(table${k}$_t) :: thistmp
+      type(table_${k}$_t) :: thistmp
 
       #:if k[0] == 'c'
-       thistmp = table${k}$_t(len(this%stored), nel=int(this%nel*1.5, int32))
+       thistmp = table_${k}$_t(len(this%stored), nel=int(this%nel*1.5, int32))
       #:else
-       thistmp = table${k}$_t(nel=int(this%nel*1.5, int32))
+       thistmp = table_${k}$_t(nel=int(this%nel*1.5, int32))
       #:endif
 
       do i = 1, this%filled
@@ -222,7 +222,7 @@ contains
   end subroutine
 
   pure subroutine destroy_table${k}$_t(this)
-   class(table${k}$_t), intent(inout) :: this
+   class(table_${k}$_t), intent(inout) :: this
 
    call this%destroy_tableabstract_t
 
@@ -231,14 +231,14 @@ contains
   end subroutine
 
   pure subroutine destroy_table${k}$_t_scal(this)
-   type(table${k}$_t), intent(inout) :: this
+   type(table_${k}$_t), intent(inout) :: this
 
    call this%destroy()
 
   end subroutine
 
   pure subroutine destroy_table${k}$_t_array1(this)
-   type(table${k}$_t), intent(inout) :: this(:)
+   type(table_${k}$_t), intent(inout) :: this(:)
 
    integer :: i
 
@@ -249,7 +249,7 @@ contains
   end subroutine
 
   pure function get_table${k}$_t(this, index) result(c)
-   class(table${k}$_t), intent(in) :: this
+   class(table_${k}$_t), intent(in) :: this
    integer(int32), intent(in) :: index
      #:if k[0] == 'c'
    character(len=len(this%stored)) :: c
@@ -270,7 +270,7 @@ contains
   end function
 
   pure function getindex_table${k}$_t(this, c) result(index)
-   class(table${k}$_t), intent(in) :: this
+   class(table_${k}$_t), intent(in) :: this
    ${l}$, intent(in) :: c
    integer(int32) :: index
 
@@ -298,7 +298,7 @@ contains
   end function
 
   subroutine writetable_table${k}$_t(this, namefile)
-   class(table${k}$_t), intent(in) :: this
+   class(table_${k}$_t), intent(in) :: this
    character(*), intent(in) :: namefile
 
    integer :: i, un
