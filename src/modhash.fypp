@@ -55,6 +55,8 @@ contains
   end if
  end function
 
+
+ !Fortran hash function based on the function `hashword` in [lookup3.c](http://burtleburtle.net/bob/c/lookup3.c)
  #:for t,k,l in NTYPES
  pure function hash_${k}$(k, seed) result(c)
   ${t}$, intent(in) :: k(:)

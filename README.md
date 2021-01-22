@@ -1,6 +1,6 @@
 # Hash tables
 
-Modern Fortran hash tables based on the function `hashword` in [lookup3.c](http:://burtleburtle.net/bob/c/lookup3.c)
+Modern Fortran hash tables based on the function `hashword` in [lookup3.c](http://burtleburtle.net/bob/c/lookup3.c)
 
 ## Derived types
 
@@ -24,6 +24,6 @@ Method         | Class      | Description
 `destroy()`            | Function   | Reset all scalars and arrays
 `get(index)`           | Function   | Returns the element stored corresponding to the index `index`.
 `getfilled()`          | Function   | Returns the number of elements stored in the DT
-`getindex(element)`    | Function   | Returns the index of the element `element`
+`getindex(element)`    | Function   | Returns the index (between 1 and `getfilled()`) of the element `element`
 `getsize()`            | Function   | Returns the size of the arrays that contains the stored elements
 `writetable(filename)` | Subroutine | Writes to a file called `filename` all elements and corresponding index stored in the DT.
