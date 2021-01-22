@@ -8,7 +8,10 @@ module modhash
  integer(int32), parameter, public :: seed_hash = 305419896_int32
 
  interface hash
-  module procedure hashchar, hashint32, hashreal32, hashint32_scal, hashreal32_scal
+  #:for t,k,l in NTYPES
+   module procedure hash${k}$
+  #:endfor
+  module procedure hashchar, hashint32_scal, hashreal32_scal
  end interface
 
 contains
