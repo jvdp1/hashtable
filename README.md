@@ -8,9 +8,9 @@ Five derived types are available:
 
 Derived type       | Data to be stored
 -------------------|--------------------------------------------
-tablechar_t        | Characters of a defined length. Trailing blanks are ignored.
-tableint32_t       | Integer scalars of 32 bits
-tablereal32_t      | Real scalars of 32 bits
+table_char_t        | Characters of a defined length. Trailing blanks are ignored.
+table_int32_t       | Integer scalars of 32 bits
+table_real32_t      | Real scalars of 32 bits
 table_arrint32_t   | Integer arrays of 32 bits
 table_arrreal32_t  | Real arrays of 32 bits
 
