@@ -1,0 +1,9 @@
+#:mute
+
+#:set NTYPES = list(zip(["integer(int32)", "real(real32)"],["int32","real32"],["integer(int32)","real(real32)"]))
+
+#:set CTYPES = list(zip(["character(len=:)"],["char"],["character(len=*)"]))
+
+#:set TYPES = CTYPES + NTYPES
+
+#:endmute

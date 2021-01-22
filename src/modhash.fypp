@@ -1,5 +1,4 @@
-#:set NTYPES = list(zip(["integer(kind=int32)", "real(kind=real32)"],["int32","real32"],["integer(kind=int32)","real(kind=real32)"]))
-
+#:include "common.fypp"
 module modhash
  use iso_fortran_env, only: int32, real32, real64
  implicit none

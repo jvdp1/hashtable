@@ -4,7 +4,6 @@ SRCFYPP=\
 
 SRC = $(SRCGEN)
 
-
 LIB = libhashtable.a
 
 SRCGEN = $(SRCFYPP:.fypp=.f90)
@@ -24,7 +23,7 @@ clean:
 %.o: %.f90
 	$(FC) $(FFLAGS) -c $<
 
-$(SRCGEN): %.f90: %.fypp
+$(SRCGEN): %.f90: %.fypp common.fypp
 	fypp $(FYPPFLAGS) $< $@
 
 #Fortran module dependencies
