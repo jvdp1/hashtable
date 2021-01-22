@@ -1,6 +1,6 @@
 program test_list
  use iso_fortran_env, only: int32
- use modtable, only: tablechar_t, tableint32_t
+ use modtable, only: table_char_t, table_int32_t
  implicit none
 
  call test_char()
@@ -15,7 +15,7 @@ contains
   real :: start, finish
   character(nchar) :: cdummy
   character(nchar), allocatable :: list(:)
-  type(tablechar_t), allocatable :: table
+  type(table_char_t), allocatable :: table
 
   allocate (list(nrows))
 
@@ -30,7 +30,7 @@ contains
   do j = 5, 1, -1
    write (*, '(a,i0)') 'Start char table', j
    allocate (table)
-   table = tablechar_t(nchar, nrows/j)
+   table = table_char_t(nchar, nrows/j)
 
    print *, ' size  : ', table%getsize()
 
@@ -67,7 +67,7 @@ contains
   integer(int32) :: col
   real :: start, finish
   integer(int32), allocatable :: list(:)
-  type(tableint32_t), allocatable :: table
+  type(table_int32_t), allocatable :: table
 
   allocate (list(nrows))
 
@@ -81,7 +81,7 @@ contains
   do j = 5, 1, -1
    write (*, '(a,i0)') 'Start char table', j
    allocate (table)
-   table = tableint32_t(nrows/j)
+   table = table_int32_t(nrows/j)
 
    print *, ' size  : ', table%getsize()
 
