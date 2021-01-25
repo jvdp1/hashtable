@@ -1,4 +1,4 @@
-program test_list
+program test_hash
  use modhash, only: hash
  use iso_fortran_env, only: int32, real32
  implicit none
