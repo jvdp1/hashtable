@@ -9,14 +9,14 @@ module modhash
 
  interface hash
   #:for t,k,l in NTYPES
-   module procedure hash_${k}$
+   module procedure hashword_${k}$
   #:endfor
-  module procedure hash_char, hash_int32_scal, hash_real32_scal
+  module procedure hashword_char, hashword_int32_scal, hashword_real32_scal
  end interface
 
 contains
 
- pure function hash_char(k, seed) result(c)
+ pure function hashword_char(k, seed) result(c)
   character(len=*), intent(in) :: k
   integer(int32), intent(in), optional :: seed
   integer(int32) :: c
@@ -35,16 +35,16 @@ contains
   kint32 = transfer(k(1:lenk)//repeat(' ', length*4 - lenk), kint32)
 
   if (present(seed)) then
-   c = hash_int32(kint32, seed)
+   c = hash(kint32, seed)
   else
-   c = hash_int32(kint32)
+   c = hash(kint32)
   end if
  end function
 
 
  !Fortran hash function based on the function `hashword` in [lookup3.c](http://burtleburtle.net/bob/c/lookup3.c)
  #:for t,k,l in NTYPES
- pure function hash_${k}$(k, seed) result(c)
+ pure function hashword_${k}$(k, seed) result(c)
   ${t}$, intent(in) :: k(:)
   integer(kind=int32), intent(in), optional :: seed
 
@@ -112,7 +112,7 @@ contains
  end function
  #:endfor
 
- pure function hash_int32_scal(k, seed) result(c)
+ pure function hashword_int32_scal(k, seed) result(c)
   integer(int32), intent(in) :: k
   integer(int32), intent(in), optional :: seed
   integer(int32) :: c
@@ -124,13 +124,13 @@ contains
   kint32(3) = seed_hash
 
   if (present(seed)) then
-   c = hash_int32(kint32, seed)
+   c = hash(kint32, seed)
   else
-   c = hash_int32(kint32)
+   c = hash(kint32)
   end if
  end function
 
- pure function hash_real32_scal(k, seed) result(c)
+ pure function hashword_real32_scal(k, seed) result(c)
   real(real32), intent(in) :: k
   integer(int32), intent(in), optional :: seed
   integer(int32) :: c
@@ -141,9 +141,9 @@ contains
   kint32(1) = transfer(k, kint32(1))
 
   if (present(seed)) then
-   c = hash_int32(kint32, seed)
+   c = hash(kint32, seed)
   else
-   c = hash_int32(kint32)
+   c = hash(kint32)
   end if
  end function
 
