@@ -104,7 +104,6 @@ contains
    b = b + k(pos + 1)
    c = c + k(pos + 2)
    #:endif
-  case default
   end select
 
   call final(a, b, c)
