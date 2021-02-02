@@ -13,7 +13,7 @@ module modtable
 
  integer(int32), parameter :: default_nel = 5000
 
- type, abstract :: tableabstrat_t
+ type, abstract :: tableabstract_t
   private
   integer(int32) :: filled
   integer(int32) :: nel
@@ -28,13 +28,13 @@ module modtable
 
  abstract interface
   pure subroutine int_destroy_tableabstract_t(this)
-   import::tableabstrat_t
-   class(tableabstrat_t), intent(inout) :: this
+   import::tableabstract_t
+   class(tableabstract_t), intent(inout) :: this
   end subroutine
  end interface
 
  #:for t,k,l in TYPES
- type, extends(tableabstrat_t) :: table_${k}$_t !(k)
+ type, extends(tableabstract_t) :: table_${k}$_t !(k)
   private
   !integer, len :: k
   !character(len=k),allocatable::stored(:)
@@ -56,7 +56,7 @@ module modtable
  #:endfor
 
  #:for t,k,l in NTYPES
- type, extends(tableabstrat_t) :: table_arr${k}$_t
+ type, extends(tableabstract_t) :: table_arr${k}$_t
   private
   ${t}$, allocatable ::stored(:, :)
  contains
@@ -78,7 +78,7 @@ module modtable
 contains
 
  pure subroutine destroy_tableabstract_t(this)
-  class(tableabstrat_t), intent(inout) :: this
+  class(tableabstract_t), intent(inout) :: this
 
   this%filled = 0
   this%nel = 0
@@ -87,7 +87,7 @@ contains
  end subroutine
 
  pure function getfilled_tableabstract_t(this) result(filled)
-  class(tableabstrat_t), intent(in) :: this
+  class(tableabstract_t), intent(in) :: this
   integer(int32) :: filled
 
   filled = this%filled
@@ -95,7 +95,7 @@ contains
  end function
 
  pure function getsize_tableabstract_t(this) result(nel)
-  class(tableabstrat_t), intent(in) :: this
+  class(tableabstract_t), intent(in) :: this
   integer(int32) :: nel
 
   nel = this%nel
