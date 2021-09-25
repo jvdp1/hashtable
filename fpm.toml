@@ -1,0 +1,12 @@
+name = "hashtable"
+version = "0.1.0"
+license = "MIT"
+author = "Jeremie Vandenplas"
+maintainer = "jeremie.vandenplas@gmail.com"
+copyright = "Copyright 2021, Jeremie Vandenplas"
+[build]
+auto-executables = false
+auto-tests = true
+auto-examples = false
+[install]
+library = false
