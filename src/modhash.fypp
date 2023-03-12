@@ -150,9 +150,9 @@ contains
   integer(kind=int32), intent(in)::x
   integer(kind=int32)::next
 
-  !https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2
+  real(real64), parameter :: log2 = log(2._real64)
 
-  next = 2_int32**int((ceiling(log(real(x, real64))/log(real(2, real64)))), int32)
+  next = 2_int32 ** int( (ceiling( log(real(x, real64)) / log2) ), int32)
 
  end function
 
