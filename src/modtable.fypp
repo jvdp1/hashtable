@@ -15,8 +15,8 @@ module modtable
 
  type, abstract :: tableabstract_t
   private
-  integer(int32) :: filled
-  integer(int32) :: nel
+  integer(int32) :: filled = 0
+  integer(int32) :: nel = 0
   integer(int32), allocatable :: id(:)
  contains
   private
