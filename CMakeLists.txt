@@ -101,7 +101,7 @@ install(
 # Package license files
 install(
   FILES
-  "LICENSE-MIT"
+  "LICENSE"
   DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/${PROJECT_NAME}"
 )
 
