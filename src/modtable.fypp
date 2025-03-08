@@ -305,7 +305,7 @@ contains
 
    open (newunit=un, file=namefile, action='write')
    do i = 1, this%filled
-    write (un, '(i10,1x,g0)') i, this%get(i)
+    write (un, '(i0,1x,g0)') i, this%get(i)
    end do
    close (un)
 
@@ -502,7 +502,7 @@ contains
 
    open (newunit=un, file=namefile, action='write')
    do i = 1, this%filled
-    write (un, '(i10,*(1x,g0))') i, this%get(i)
+    write (un, '(i0,*(1x,g0))') i, this%get(i)
    end do
    close (un)
 
