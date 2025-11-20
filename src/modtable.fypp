@@ -12,6 +12,7 @@ module modtable
  #:endfor
 
  integer(int32), parameter :: default_nel = 5000
+ character(len=*), parameter, public :: table_char_fmt='(i12,1x,a)'
 
  type, abstract :: tableabstract_t
   private
@@ -305,7 +306,11 @@ contains
 
    open (newunit=un, file=namefile, action='write')
    do i = 1, this%filled
+    #:if k == 'char'
+    write (un, table_char_fmt) i, this%get(i)
+    #:else
     write (un, '(i0,1x,g0)') i, this%get(i)
+    #:endif
    end do
    close (un)
 

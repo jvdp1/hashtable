@@ -1,6 +1,6 @@
 program test_table
  use iso_fortran_env, only: int32, real32
- use modtable, only: table_char_t, table_int32_t, table_real32_t, table_arrint32_t, table_arrreal32_t
+ use modtable, only: table_char_t, table_int32_t, table_real32_t, table_arrint32_t, table_arrreal32_t, table_char_fmt
  implicit none
 
  call test_char()
@@ -19,6 +19,7 @@ contains
   integer, parameter:: lenchar = 12
   character(len=:), allocatable :: namefile
   character(len=lenchar):: cdummy
+  character(len=1000):: msg
   logical :: lnew
 
   table = table_char_t(lenchar, nel=5)
@@ -103,7 +104,7 @@ contains
 
   i = 0
   do
-   read (un, '(i10,1x,a)', iostat=io) j, cdummy
+   read (un, fmt=table_char_fmt, iostat=io, iomsg=msg) j, cdummy
    if (io .ne. 0) exit
    call table1%add(cdummy)
    call check(table%getindex(cdummy) == table1%getindex(cdummy), 'char: issue 0 '//cdummy)
