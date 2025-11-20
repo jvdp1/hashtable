@@ -305,7 +305,11 @@ contains
 
    open (newunit=un, file=namefile, action='write')
    do i = 1, this%filled
+    #:if k == 'char'
+    write (un, '(i12,1x,g0)') i, this%get(i)
+    #:else
     write (un, '(i0,1x,g0)') i, this%get(i)
+    #:endif
    end do
    close (un)
 
