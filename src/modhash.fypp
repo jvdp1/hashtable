@@ -152,7 +152,7 @@ contains
 
   real(real64), parameter :: log2 = log(2._real64)
 
-  next = 2_int32 ** int( (ceiling( log(real(x, real64)) / log2) ), int32)
+  next = 2_int32 ** ceiling( log(real(x, real64)) / log2, kind=int32 )
 
  end function
 
