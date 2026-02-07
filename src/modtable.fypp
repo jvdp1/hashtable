@@ -4,10 +4,10 @@ module modtable
  use modhash, only: roundinguppower2, seed_hash, hash
  implicit none
  private
- #:for t,k,l in TYPES
+ #:for t,k,l,m in TYPES
  public :: table_${k}$_t
  #:endfor
- #:for t,k,l in NTYPES
+ #:for t,k,l,m in NTYPES
  public :: table_arr${k}$_t
  #:endfor
 
@@ -34,7 +34,7 @@ module modtable
   end subroutine
  end interface
 
- #:for t,k,l in TYPES
+ #:for t,k,l,m in TYPES
  type, extends(tableabstract_t) :: table_${k}$_t !(k)
   private
   !integer, len :: k
@@ -58,7 +58,7 @@ module modtable
 
  #:endfor
 
- #:for t,k,l in NTYPES
+ #:for t,k,l,m in NTYPES
  type, extends(tableabstract_t) :: table_arr${k}$_t
   private
   ${t}$, allocatable :: stored(:, :)
@@ -107,7 +107,7 @@ contains
 
  end function
 
- #:for t,k,l in TYPES
+ #:for t,k,l,m in TYPES
   #:if k[0] == 'c'
  pure function constructor_table${k}$_t(k, nel) result(this)
   integer(kind=int32), intent(in) :: k
@@ -393,7 +393,7 @@ contains
   end subroutine
     #:endfor
 
-    #:for t,k,l in NTYPES
+    #:for t,k,l,m in NTYPES
   pure function constructor_table_arr${k}$_t(k, nel) result(this)
    integer(kind=int32), intent(in) :: k
    integer(kind=int32), intent(in), optional :: nel

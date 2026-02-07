@@ -8,7 +8,7 @@ module modhash
  integer(int32), parameter, public :: seed_hash = 305419896_int32
 
  interface hash
-  #:for t,k,l in NTYPES
+  #:for t,k,l,m in NTYPES
    module procedure hashword_${k}$
   #:endfor
   module procedure hashword_char, hashword_int32_scal, hashword_real32_scal
@@ -43,7 +43,7 @@ contains
 
 
  !Fortran hash function based on the function `hashword` in [lookup3.c](http://burtleburtle.net/bob/c/lookup3.c)
- #:for t,k,l in NTYPES
+ #:for t,k,l,m in NTYPES
  pure function hashword_${k}$(k, seed) result(c)
   ${t}$, intent(in) :: k(:)
   integer(kind=int32), intent(in), optional :: seed
