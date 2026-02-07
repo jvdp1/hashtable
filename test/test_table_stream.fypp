@@ -152,28 +152,6 @@ contains
    call check(table%get(i) == table1%get(i), 'read_${k}$: issue with value: wrong value')
   end do
 
-!  open (newunit=un, file=namefile, status='old', action='read', access='stream', iostat=io)
-!
-!  read (un, iostat=io) nfilled
-!  call check(io == 0, '${k}$: issue with reading nfilled')
-!  call check(nfilled == size(input), '${k}$: issue with nfilled: wrong value')
-!
-!  read (un, iostat=io) nsize
-!  call check(io == 0, '${k}$: issue with reading nsize')
-!  call check(nsize == 1_int32, '${k}$: issue with nsize: wrong value')
-!
-!  read (un, iostat=io) nstorage
-!  call check(io == 0, '${k}$: issue with reading nstorage')
-!  call check(nstorage == storage_size(input(1), kind=int32)/8, '${k}$: issue with nstorage: wrong value')
-!
-!  do i = 1, nfilled
-!   read (un, iostat=io) nvalue
-!   call check(io == 0, '${k}$: issue with reading nvalue')
-!   call check(nvalue == input(i), '${k}$: issue with value: wrong value')
-!  end do
-!
-!  close (un)
-!
   print *, 'Succesful readstream ${k}$'
 
  end subroutine
