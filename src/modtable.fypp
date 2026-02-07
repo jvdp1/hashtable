@@ -122,16 +122,15 @@ contains
 
    this%filled = 0
 
-   allocate (this%id(this%nel))
-   this%id = 0
+   allocate (this%id(this%nel), source=0_int32)
 
-     #:if k[0] == 'c'
-   allocate (character(len=k) :: this%stored(this%nel))
-   this%stored(:) = ''
-     #:else
-   allocate (this%stored(this%nel))
-   this%stored = 0
-     #:endif
+   #:if k[0] == 'c'
+    allocate (character(len=k) :: this%stored(this%nel))
+    this%stored(:) = ''
+   #:else
+    allocate (this%stored(this%nel))
+    this%stored = 0
+   #:endif
 
   end function
 
@@ -363,24 +362,20 @@ contains
    if (io .ne. 0) error stop 'readtable: wrong io for nstorage'
 
    !Initiate the table
-   if (nfilled == 0_int32) then
-    this%nel = default_nel
-   else
-    this%nel = next_power_of_2(int(1.3*nfilled, kind=int32))
-   end if
+   this%nel = next_power_of_2(int(1.3*nfilled, kind=int32))
    this%filled = 0
 
    allocate (this%id(this%nel), source=0_int32)
 
-     #:if k[0] == 'c'
-   allocate (character(len=nstorage) :: this%stored(this%nel))
-   this%stored(:) = ''
-   allocate (character(len=nstorage) :: nvalue)
-     #:else
-   allocate (this%stored(this%nel))
-   this%stored = 0
-   allocate (nvalue)
-     #:endif
+   #:if k[0] == 'c'
+    allocate (character(len=nstorage) :: this%stored(this%nel))
+    this%stored(:) = ''
+    allocate (character(len=nstorage) :: nvalue)
+   #:else
+    allocate (this%stored(this%nel))
+    this%stored = 0
+    allocate (nvalue)
+   #:endif
 
    do i = 1, nfilled
     read (un, iostat=io) nvalue
@@ -404,8 +399,7 @@ contains
 
    this%filled = 0
 
-   allocate (this%id(this%nel))
-   this%id = 0
+   allocate (this%id(this%nel), source=0_int32)
 
    allocate (this%stored(k, this%nel))
    this%stored = 0
@@ -630,11 +624,7 @@ contains
    if (io .ne. 0) error stop 'readtable_arr: wrong io for nstorage'
 
    !Initiate the table
-   if (nfilled == 0_int32) then
-    this%nel = 0_int32
-   else
-    this%nel = next_power_of_2(int(1.3*nfilled, kind=int32))
-   end if
+   this%nel = next_power_of_2(int(1.3*nfilled, kind=int32))
    this%filled = 0
 
    allocate (this%id(this%nel), source=0_int32)
