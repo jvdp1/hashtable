@@ -5,14 +5,14 @@ module modtable
  implicit none
  private
  #:for t,k,l in TYPES
- public::table_${k}$_t
+ public :: table_${k}$_t
  #:endfor
  #:for t,k,l in NTYPES
- public::table_arr${k}$_t
+ public :: table_arr${k}$_t
  #:endfor
 
  integer(int32), parameter :: default_nel = 5000
- character(len=*), parameter, public :: table_char_fmt='(i12,1x,a)'
+ character(len=*), parameter, public :: table_char_fmt = '(i12,1x,a)'
 
  type, abstract :: tableabstract_t
   private
@@ -29,7 +29,7 @@ module modtable
 
  abstract interface
   pure subroutine int_destroy_tableabstract_t(this)
-   import::tableabstract_t
+   import :: tableabstract_t
    class(tableabstract_t), intent(inout) :: this
   end subroutine
  end interface
@@ -39,7 +39,7 @@ module modtable
   private
   !integer, len :: k
   !character(len=k),allocatable::stored(:)
-  ${t}$, allocatable ::stored(:)
+  ${t}$, allocatable :: stored(:)
  contains
   private
   procedure, public :: add => add_table${k}$_t
@@ -47,6 +47,7 @@ module modtable
   procedure, public :: get => get_table${k}$_t
   procedure, public :: getindex => getindex_table${k}$_t
   procedure, public :: writetable => writetable_table${k}$_t
+  procedure, public :: writestream => writetable_table_stream${k}$_t
   final :: destroy_table${k}$_t_scal, destroy_table${k}$_t_array1
  end type
 
@@ -59,7 +60,7 @@ module modtable
  #:for t,k,l in NTYPES
  type, extends(tableabstract_t) :: table_arr${k}$_t
   private
-  ${t}$, allocatable ::stored(:, :)
+  ${t}$, allocatable :: stored(:, :)
  contains
   private
   procedure, public :: add => add_table_arr${k}$_t
@@ -67,6 +68,7 @@ module modtable
   procedure, public :: get => get_table_arr${k}$_t
   procedure, public :: getindex => getindex_table_arr${k}$_t
   procedure, public :: writetable => writetable_table_arr${k}$_t
+  procedure, public :: writestream => writetable_table_arr_stream${k}$_t
   final :: destroy_table_arr${k}$_t_scal, destroy_table_arr${k}$_t_array1
  end type
 
@@ -196,29 +198,29 @@ contains
 
    error stop 'too many collisions'
 
-    contains
+  contains
 
-     subroutine increase_size()
-      type(table_${k}$_t) :: thistmp
+   subroutine increase_size()
+    type(table_${k}$_t) :: thistmp
 
       #:if k[0] == 'c'
-       thistmp = table_${k}$_t(len(this%stored), nel=int(this%nel*1.5, int32))
+    thistmp = table_${k}$_t(len(this%stored), nel=int(this%nel*1.5, int32))
       #:else
-       thistmp = table_${k}$_t(nel=int(this%nel*1.5, int32))
+    thistmp = table_${k}$_t(nel=int(this%nel*1.5, int32))
       #:endif
 
-      do i = 1, this%filled
-       call thistmp%add(this%stored(i))
-      end do
+    do i = 1, this%filled
+     call thistmp%add(this%stored(i))
+    end do
 
-      this%filled = thistmp%filled
-      this%nel = thistmp%nel
-      if (allocated(this%id)) deallocate (this%id)
-      if (allocated(this%stored)) deallocate (this%stored)
-      call move_alloc(thistmp%id, this%id)
-      call move_alloc(thistmp%stored, this%stored)
+    this%filled = thistmp%filled
+    this%nel = thistmp%nel
+    if (allocated(this%id)) deallocate (this%id)
+    if (allocated(this%stored)) deallocate (this%stored)
+    call move_alloc(thistmp%id, this%id)
+    call move_alloc(thistmp%stored, this%stored)
 
-     end subroutine
+   end subroutine
 
   end subroutine
 
@@ -255,7 +257,7 @@ contains
      #:if k[0] == 'c'
    character(len=len(this%stored)) :: c
      #:else
-   ${t}$ :: c
+   ${t}$::c
      #:endif
 
    if (index .gt. this%filled) then
@@ -312,6 +314,28 @@ contains
     write (un, '(i0,1x,g0)') i, this%get(i)
     #:endif
    end do
+   close (un)
+
+  end subroutine
+
+  subroutine writetable_table_stream${k}$_t(this, namefile)
+   class(table_${k}$_t), intent(in) :: this
+   character(*), intent(in) :: namefile
+
+   integer :: i, un
+
+   open (newunit=un, file=namefile, action='write', access='stream', status='replace')
+
+   write (un) this%filled
+
+   write (un) 1_int32
+
+   write (un) storage_size(this%get(1), kind=int32)/8_int32  !store storage in bytes; 1 byte = 8 bits
+
+   do i = 1, this%filled
+    write (un) this%get(i)
+   end do
+
    close (un)
 
   end subroutine
@@ -455,7 +479,7 @@ contains
   pure function get_table_arr${k}$_t(this, index) result(c)
    class(table_arr${k}$_t), intent(in) :: this
    integer(int32), intent(in) :: index
-   ${t}$ :: c(size(this%stored, 1))
+   ${t}$::c(size(this%stored,1))
 
    if (index .gt. this%filled) then
     c = 0
@@ -509,6 +533,28 @@ contains
    do i = 1, this%filled
     write (un, '(i0,*(1x,g0))') i, this%get(i)
    end do
+   close (un)
+
+  end subroutine
+
+  subroutine writetable_table_arr_stream${k}$_t(this, namefile)
+   class(table_arr${k}$_t), intent(in) :: this
+   character(*), intent(in) :: namefile
+
+   integer :: i, un
+
+   open (newunit=un, file=namefile, action='write', access='stream', status='replace')
+
+   write (un) this%filled
+
+   write (un) size(this%get(1), kind=int32)
+
+   write (un) storage_size(this%get(1), kind=int32)/8_int32  !store storage in bytes; 1 byte = 8 bits
+
+   do i = 1, this%filled
+    write (un) this%get(i)
+   end do
+
    close (un)
 
   end subroutine
