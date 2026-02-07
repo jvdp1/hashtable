@@ -326,7 +326,7 @@ contains
 
    integer :: i, un
 
-   open (newunit=un, file=namefile, action='write', access='stream', status='replace', form='unformatted')
+   open (newunit=un, file=namefile, action='write', access='stream', form='unformatted', status='replace')
 
    write (un) this%filled
 
@@ -350,7 +350,7 @@ contains
    integer(int32) :: nfilled, nsize, nstorage
    ${t}$, allocatable :: nvalue
 
-   open (newunit=un, file=namefile, action='read', access='stream', status='old', form='unformatted')
+   open (newunit=un, file=namefile, action='read', access='stream', form='unformatted', status='old')
 
    read (un, iostat=io) nfilled
    if (io .ne. 0) error stop 'readtable: wrong value for filled'
@@ -594,7 +594,7 @@ contains
 
    integer :: i, un
 
-   open (newunit=un, file=namefile, action='write', access='stream', status='replace', form='unformatted')
+   open (newunit=un, file=namefile, action='write', access='stream', form='unformatted', status='replace')
 
    write (un) this%filled
 
@@ -618,7 +618,7 @@ contains
    integer(int32) :: nfilled, nsize, nstorage
    ${t}$, allocatable :: nvalue(:)
 
-   open (newunit=un, file=namefile, action='read', access='stream', status='old', form='unformatted')
+   open (newunit=un, file=namefile, action='read', access='stream', form='unformatted', status='old')
 
    read (un, iostat=io) nfilled
    if (io .ne. 0) error stop 'readtable: wrong value for filled'
