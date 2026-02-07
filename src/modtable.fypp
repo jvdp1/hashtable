@@ -627,7 +627,11 @@ contains
    if (io .ne. 0) error stop 'readtable: wrong value for nstorage'
 
    !Initiate the table
-   this%nel = roundinguppower2(int(1.3*nfilled, kind=int32))
+   if (nfilled == 0_int32) then
+    this%nel = 0_int32
+   else
+    this%nel = roundinguppower2(int(1.3*nfilled, kind=int32))
+   end if
    this%filled = 0
 
    allocate (this%id(this%nel), source=0_int32)
