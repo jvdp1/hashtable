@@ -1,4 +1,9 @@
-PROGS_SRC = test_hash.f90 test_table.f90 #test_list.f90
+SRCFYPP=\
+	test_table_stream.fypp
+
+SRCGEN = $(SRCFYPP:.fypp=.f90)
+
+PROGS_SRC = test_hash.f90 test_table.f90 $(SRCGEN) #test_list.f90
 
 NAME = hashtable
 
@@ -19,10 +24,13 @@ $(TESTPROGS):
 	./$(@:TEST=)
 
 clean:
-	$(RM) $(PROGS) $(OBJS) $(CLEAN_FILES)
+	$(RM) $(PROGS) $(OBJS) $(CLEAN_FILES) $(SRCGEN)
 
 %.o: %.f90
 	$(FC) $(FFLAGS) $(CPPFLAGS) -c $<
+
+$(SRCGEN): %.f90: %.fypp ../src/common.fypp
+	fypp $(FYPPFLAGS) $< $@
 
 $(PROGS): %: %.o $(LIB)
 	$(FC) $(FFLAGS) $(CPPFLAGS) -o $@ $^

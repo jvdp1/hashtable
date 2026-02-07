@@ -1,5 +1,7 @@
 test_hash
 test_table
+test_table_stream
+test_table_stream.f90
 table__arrint32.dat
 table__arrint32.dat1
 table__arrreal32.dat
@@ -10,3 +12,5 @@ table_int32.dat
 table_int32.dat1
 table_real32.dat
 table_real32.dat1
+
+*.stream
