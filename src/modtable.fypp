@@ -353,14 +353,14 @@ contains
    open (newunit=un, file=namefile, action='read', access='stream', form='unformatted', status='old')
 
    read (un, iostat=io) nfilled
-   if (io .ne. 0) error stop 'readtable: wrong value for filled'
+   if (io .ne. 0) error stop 'readtable: wrong io for filled'
 
    read (un, iostat=io) nsize
-   if (io .ne. 0) error stop 'readtable: wrong value for nsize'
+   if (io .ne. 0) error stop 'readtable: wrong io for nsize'
    if (nsize .ne. 1_int32) error stop 'readtable: wrong value for nsize'
 
    read (un, iostat=io) nstorage
-   if (io .ne. 0) error stop 'readtable: wrong value for nstorage'
+   if (io .ne. 0) error stop 'readtable: wrong io for nstorage'
 
    !Initiate the table
    if (nfilled == 0_int32) then
@@ -384,7 +384,7 @@ contains
 
    do i = 1, nfilled
     read (un, iostat=io) nvalue
-    if (io .ne. 0) error stop 'readtable: wrong value for nvalue'
+    if (io .ne. 0) error stop 'readtable: wrong io for nvalue'
     call this%add(nvalue)
    end do
 
@@ -621,14 +621,13 @@ contains
    open (newunit=un, file=namefile, action='read', access='stream', form='unformatted', status='old')
 
    read (un, iostat=io) nfilled
-   if (io .ne. 0) error stop 'readtable: wrong value for filled'
+   if (io .ne. 0) error stop 'readtable_arr: wrong io for filled'
 
    read (un, iostat=io) nsize
-   if (io .ne. 0) error stop 'readtable: wrong value for nsize'
-   if (nsize .ne. 0_int32) error stop 'readtable: wrong value for nsize'
+   if (io .ne. 0) error stop 'readtable_arr: wrong io for nsize'
 
    read (un, iostat=io) nstorage
-   if (io .ne. 0) error stop 'readtable: wrong value for nstorage'
+   if (io .ne. 0) error stop 'readtable_arr: wrong io for nstorage'
 
    !Initiate the table
    if (nfilled == 0_int32) then
@@ -647,7 +646,7 @@ contains
 
    do i = 1, nfilled
     read (un, iostat=io) nvalue
-    if (io .ne. 0) error stop 'readtable: wrong value for nvalue'
+    if (io .ne. 0) error stop 'readtable_arr: wrong io for nvalue'
     call this%add(nvalue)
    end do
 

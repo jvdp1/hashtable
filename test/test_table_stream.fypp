@@ -11,6 +11,7 @@ program test_table
  call test_${k}$ ()
  call test_read_${k}$ ()
  call test_arr${k}$ ()
+ call test_read_arr${k}$ ()
  #:endfor
 
 ! call test_arrint32()
@@ -124,10 +125,8 @@ contains
   type(table_${k}$_t) :: table
   type(table_${k}$_t) :: table1
 
-  integer :: i, io, un
-  integer(int32) :: nfilled, nsize, nstorage
-  ${t}$::nvalue
-  character(len=:), allocatable :: namefile
+  integer :: i
+  character(*), parameter :: namefile = 'table_${k}$.stream'
 
   ${t}$, parameter :: input(*) = ${m}$ ([10, 11, 111, 2222 &
                                          , 22, 333, -5, 44 &
@@ -141,7 +140,6 @@ contains
 
   call check(table%getfilled() == size(input), '${k}$: issue with initial filled')
 
-  namefile = 'table_${k}$.stream'
   call table%writestream(namefile)
 
   call table1%readstream(namefile)
@@ -211,11 +209,8 @@ contains
   type(table_arr${k}$_t) :: table
   type(table_arr${k}$_t) :: table1
 
-  integer :: i, io, un
-  integer(int32) :: nfilled, nsize, nstorage
-  ${t}$::nvalue
-  character(len=:), allocatable :: namefile
-
+  integer :: i
+  character(*), parameter :: namefile = 'table_arr${k}$.stream'
   ${t}$, parameter :: input(*, *) = ${m}$ (reshape([10, 11, 111, 2222 &
                                                     , 22, 333, -5, 44 &
                                                     , -9, 1000, -23, 555], [4, 3]), kind=${k}$)
@@ -228,7 +223,6 @@ contains
 
   call check(table%getfilled() == size(input, 2), 'arr${k}$: issue with initial filled')
 
-  namefile = 'table_arr${k}$.stream'
   call table%writestream(namefile)
 
   call table1%readstream(namefile)
