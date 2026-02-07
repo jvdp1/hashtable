@@ -116,7 +116,7 @@ contains
 
   close (un)
 
-  print *, 'Succesful writestream ${k}$'
+  print *, 'Successful writestream ${k}$'
 
  end subroutine
 
@@ -152,7 +152,7 @@ contains
    call check(table%get(i) == table1%get(i), 'read_${k}$: issue with value: wrong value')
   end do
 
-  print *, 'Succesful readstream ${k}$'
+  print *, 'Successful readstream ${k}$'
 
  end subroutine
 
@@ -203,7 +203,7 @@ contains
 
   close (un)
 
-  print *, 'Succesful writestream arr${k}$'
+  print *, 'Successful writestream arr${k}$'
 
  end subroutine
 
@@ -239,7 +239,7 @@ contains
    call check(all(table%get(i) == table1%get(i)), 'read_arr${k}$: issue with value: wrong value')
   end do
 
-  print *, 'Succesful readstream arr${k}$'
+  print *, 'Successful readstream arr${k}$'
 
  end subroutine
 
