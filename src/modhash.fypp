@@ -3,7 +3,7 @@ module modhash
  use iso_fortran_env, only: int32, real32, real64
  implicit none
  private
- public :: hash, roundinguppower2
+ public :: hash, next_power_of_2
 
  integer(int32), parameter, public :: seed_hash = 305419896_int32
 
@@ -146,13 +146,30 @@ contains
   end if
  end function
 
- elemental pure function roundinguppower2(x) result(next)
-  integer(kind=int32), intent(in)::x
-  integer(kind=int32)::next
+ elemental pure function next_power_of_2(x) result(next)
+  integer(kind=int32), intent(in) :: x
+  integer(kind=int32) :: next
 
-  real(real64), parameter :: log2 = log(2._real64)
+  integer(int32) :: bits
 
-  next = 2_int32 ** int( (ceiling( log(real(x, real64)) / log2) ), int32)
+  ! If x is 0 or 1, the next power of 2 is 1
+  if (x <= 1_int32) then
+   next = 1_int32
+   return
+  end if
+
+  ! Check if x is already a power of 2
+  ! A power of 2 has only one bit set, so iand(x, x-1) == 0
+  if (iand(x, x - 1_int32) == 0_int32) then
+   next = x
+   return
+  end if
+
+  ! The position of the highest set bit determines the power
+  bits = bit_size(x) - leadz(x)
+
+  ! Shift 1 into the position above the highest set bit
+  next = shiftl(1_int32, bits)
 
  end function
 
