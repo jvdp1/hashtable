@@ -49,11 +49,6 @@ endfunction()
 #     fyppfiles [in]: Files to be processed by fypp
 #     f90files [out]: List of created f90 files on exit
 #
-function (fypp_f90 fyppopts fyppfiles f90files)
-  preprocess("${FYPP}" "${fyppopts}" "fypp" "f90" "${fyppfiles}" _f90files)
-  set(${f90files} ${_f90files} PARENT_SCOPE)
-endfunction()
-
 set(dir "${CMAKE_CURRENT_SOURCE_DIR}")
 
 set(

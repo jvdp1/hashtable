@@ -63,3 +63,8 @@ install(
   "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc"
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
 )
+
+function (fypp_f90 fyppopts fyppfiles f90files)
+  preprocess("${FYPP}" "${fyppopts}" "fypp" "f90" "${fyppfiles}" _f90files)
+  set(${f90files} ${_f90files} PARENT_SCOPE)
+endfunction()
