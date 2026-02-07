@@ -621,7 +621,7 @@ contains
 
    read (un, iostat=io) nsize
    if (io .ne. 0) error stop 'readtable: wrong value for nsize'
-   if (nsize .ne. 1_int32) error stop 'readtable: wrong value for nsize'
+   if (nsize <= 0_int32) error stop 'readtable: wrong value for nsize'
 
    read (un, iostat=io) nstorage
    if (io .ne. 0) error stop 'readtable: wrong value for nstorage'
