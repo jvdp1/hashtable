@@ -1,7 +1,7 @@
 #:include "common.fypp"
 module modtable
  use iso_fortran_env, only: int32, real32
- use modhash, only: roundinguppower2, seed_hash, hash
+ use modhash, only: next_power_of_2, seed_hash, hash
  implicit none
  private
  #:for t,k,l,m in TYPES
@@ -117,8 +117,8 @@ contains
    integer(kind=int32), intent(in), optional :: nel
    type(table_${k}$_t) :: this
 
-   this%nel = roundinguppower2(default_nel)
-   if (present(nel)) this%nel = roundinguppower2(nel)
+   this%nel = next_power_of_2(default_nel)
+   if (present(nel)) this%nel = next_power_of_2(nel)
 
    this%filled = 0
 
@@ -366,7 +366,7 @@ contains
    if (nfilled == 0_int32) then
     this%nel = default_nel
    else
-    this%nel = roundinguppower2(int(1.3*nfilled, kind=int32))
+    this%nel = next_power_of_2(int(1.3*nfilled, kind=int32))
    end if
    this%filled = 0
 
@@ -399,8 +399,8 @@ contains
    integer(kind=int32), intent(in), optional :: nel
    type(table_arr${k}$_t) :: this
 
-   this%nel = roundinguppower2(default_nel)
-   if (present(nel)) this%nel = roundinguppower2(nel)
+   this%nel = next_power_of_2(default_nel)
+   if (present(nel)) this%nel = next_power_of_2(nel)
 
    this%filled = 0
 
@@ -633,7 +633,7 @@ contains
    if (nfilled == 0_int32) then
     this%nel = 0_int32
    else
-    this%nel = roundinguppower2(int(1.3*nfilled, kind=int32))
+    this%nel = next_power_of_2(int(1.3*nfilled, kind=int32))
    end if
    this%filled = 0
 
