@@ -8,8 +8,8 @@ macro(ADDTEST name)
 endmacro(ADDTEST)
 
 macro(ADDTESTFYPP name)
-    fypp_f90("${fyppFlags}" "${name}" outname)
-    add_executable(test_${name} "${outname}")
+    fypp_f90("${fyppFlags}" "test_${name}.fypp" outname)
+    add_executable(test_${name} ${outname})
     target_link_libraries(test_${name} "${PROJECT_NAME}")
     add_test(NAME ${name}
              COMMAND $<TARGET_FILE:test_${name}>
