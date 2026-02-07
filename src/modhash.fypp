@@ -66,13 +66,13 @@ contains
   pos = 1
   do while (length > 3)
    #:if k[0] == 'r'
-   a = a + transfer(k(pos), a)
-   b = b + transfer(k(pos + 1), b)
-   c = c + transfer(k(pos + 2), c)
+    a = a + transfer(k(pos), a)
+    b = b + transfer(k(pos + 1), b)
+    c = c + transfer(k(pos + 2), c)
    #:else
-   a = a + k(pos)
-   b = b + k(pos + 1)
-   c = c + k(pos + 2)
+    a = a + k(pos)
+    b = b + k(pos + 1)
+    c = c + k(pos + 2)
    #:endif
    call mix(a, b, c)
    length = length - 3
@@ -82,27 +82,27 @@ contains
   select case (length)
   case (1)
    #:if k[0] == 'r'
-   a = a + transfer(k(pos), a)
+    a = a + transfer(k(pos), a)
    #:else
-   a = a + k(pos)
+    a = a + k(pos)
    #:endif
   case (2)
    #:if k[0] == 'r'
-   a = a + transfer(k(pos), a)
-   b = b + transfer(k(pos + 1), b)
+    a = a + transfer(k(pos), a)
+    b = b + transfer(k(pos + 1), b)
    #:else
-   a = a + k(pos)
-   b = b + k(pos + 1)
+    a = a + k(pos)
+    b = b + k(pos + 1)
    #:endif
   case (3)
    #:if k[0] == 'r'
-   a = a + transfer(k(pos), a)
-   b = b + transfer(k(pos + 1), b)
-   c = c + transfer(k(pos + 2), c)
+    a = a + transfer(k(pos), a)
+    b = b + transfer(k(pos + 1), b)
+    c = c + transfer(k(pos + 2), c)
    #:else
-   a = a + k(pos)
-   b = b + k(pos + 1)
-   c = c + k(pos + 2)
+    a = a + k(pos)
+    b = b + k(pos + 1)
+    c = c + k(pos + 2)
    #:endif
   end select
 
