@@ -48,6 +48,7 @@ module modtable
   procedure, public :: getindex => getindex_table${k}$_t
   procedure, public :: writetable => writetable_table${k}$_t
   procedure, public :: writestream => writetable_table_stream${k}$_t
+  procedure, public :: readstream => readtable_table_stream${k}$_t
   final :: destroy_table${k}$_t_scal, destroy_table${k}$_t_array1
  end type
 
@@ -69,6 +70,7 @@ module modtable
   procedure, public :: getindex => getindex_table_arr${k}$_t
   procedure, public :: writetable => writetable_table_arr${k}$_t
   procedure, public :: writestream => writetable_table_arr_stream${k}$_t
+  procedure, public :: readstream => readtable_table_arr_stream${k}$_t
   final :: destroy_table_arr${k}$_t_scal, destroy_table_arr${k}$_t_array1
  end type
 
@@ -340,6 +342,51 @@ contains
 
   end subroutine
 
+  subroutine readtable_table_stream${k}$_t(this, namefile)
+   class(table_${k}$_t), intent(out) :: this
+   character(*), intent(in) :: namefile
+
+   integer :: i, io, un
+   integer(int32) :: nfilled, nsize, nstorage
+   ${t}$, allocatable :: nvalue
+
+   open (newunit=un, file=namefile, action='read', access='stream', status='old')
+
+   read (un, iostat=io) nfilled
+   if (io .ne. 0) error stop 'readtable: wrong value for filled'
+
+   read (un, iostat=io) nsize
+   if (io .ne. 0) error stop 'readtable: wrong value for nsize'
+   if (nsize .ne. 1_int32) error stop 'readtable: wrong value for nsize'
+
+   read (un, iostat=io) nstorage
+   if (io .ne. 0) error stop 'readtable: wrong value for nstorage'
+
+   !Initiate the table
+   this%nel = roundinguppower2(int(1.3*nfilled, kind=int32))
+   this%filled = 0
+
+   allocate (this%id(this%nel), source=0_int32)
+
+     #:if k[0] == 'c'
+   allocate (character(len=nstorage) :: this%stored(this%nel))
+   this%stored(:) = ''
+   allocate (character(len=nstorage) :: nvalue)
+     #:else
+   allocate (this%stored(this%nel))
+   this%stored = 0
+   allocate (nvalue)
+     #:endif
+
+   do i = 1, nfilled
+    read (un, iostat=io) nvalue
+    if (io .ne. 0) error stop 'readtable: wrong value for nvalue'
+    call this%add(nvalue)
+   end do
+
+   close (un)
+
+  end subroutine
     #:endfor
 
     #:for t,k,l in NTYPES
@@ -559,6 +606,46 @@ contains
 
   end subroutine
 
+  subroutine readtable_table_arr_stream${k}$_t(this, namefile)
+   class(table_arr${k}$_t), intent(out) :: this
+   character(*), intent(in) :: namefile
+
+   integer :: i, io, un
+   integer(int32) :: nfilled, nsize, nstorage
+   ${t}$, allocatable :: nvalue(:)
+
+   open (newunit=un, file=namefile, action='read', access='stream', status='old')
+
+   read (un, iostat=io) nfilled
+   if (io .ne. 0) error stop 'readtable: wrong value for filled'
+
+   read (un, iostat=io) nsize
+   if (io .ne. 0) error stop 'readtable: wrong value for nsize'
+   if (nsize .ne. 1_int32) error stop 'readtable: wrong value for nsize'
+
+   read (un, iostat=io) nstorage
+   if (io .ne. 0) error stop 'readtable: wrong value for nstorage'
+
+   !Initiate the table
+   this%nel = roundinguppower2(int(1.3*nfilled, kind=int32))
+   this%filled = 0
+
+   allocate (this%id(this%nel), source=0_int32)
+
+   allocate (this%stored(nsize, this%nel))
+   this%stored = 0
+
+   allocate (nvalue(nsize))
+
+   do i = 1, nfilled
+    read (un, iostat=io) nvalue
+    if (io .ne. 0) error stop 'readtable: wrong value for nvalue'
+    call this%add(nvalue)
+   end do
+
+   close (un)
+
+  end subroutine
     #:endfor
 
   end module
