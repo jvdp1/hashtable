@@ -14,9 +14,6 @@ program test_table
  call test_read_arr${k}$ ()
  #:endfor
 
-! call test_arrint32()
-! call test_arrreal32()
-
 contains
 
  subroutine test_char()

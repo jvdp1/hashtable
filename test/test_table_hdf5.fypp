@@ -1,0 +1,124 @@
+#:include "../src/common.fypp"
+
+program test_table
+ use iso_fortran_env, only: int32, real32
+ use modtable, only: table_char_t, table_int32_t, table_real32_t, table_arrint32_t, table_arrreal32_t, table_char_fmt
+ implicit none
+
+ call test_read_char()
+
+ #:for t,k,l,m in NTYPES
+  call test_${k}$ ()
+  call test_read_${k}$ ()
+ #:endfor
+
+contains
+
+ subroutine test_read_char()
+  type(table_char_t) :: table
+  type(table_char_t) :: table1
+
+  integer :: i
+  character(*), parameter :: nametable = 'table_char'
+  character(*), parameter :: namefile = nametable//'.h5'
+
+  integer, parameter :: len_c = 15
+  character(len=*), parameter :: input(*) = [character(len=len_c) :: "c10", "c11", "c111", "c2222" &
+                                                                                                                , "c22", "c333", "c-5", "c44" &
+                                                                                                                , "c-9", "c1000", "c-23"]
+
+  table = table_char_t(k=len_c, nel=size(input))
+
+  do i = 1, size(input)
+   call table%add(input(i))
+  end do
+
+  call check(table%getfilled() == size(input), 'char: issue with initial filled')
+
+  call table%writehdf5(namefile, nametable)
+
+  call table1%readhdf5(namefile, nametable)
+
+  call check(table%getfilled() == table1%getfilled(), 'read_hdf5_char: issue with initial filled')
+
+  do i = 1, table%getfilled()
+   call check(table%get(i) == table1%get(i), 'read_hdf5_char: issue with value: wrong value')
+  end do
+
+  print *, 'Successful readhdf5 char'
+
+ end subroutine
+
+ #:for t,k,l,m in NTYPES
+  subroutine test_${k}$ ()
+   type(table_${k}$_t) :: table
+
+   integer :: i
+   character(len=:), allocatable :: namefile
+
+   ${t}$, parameter :: input(*) = ${m}$ ([10, 11, 111, 2222 &
+                                          , 22, 333, -5, 44 &
+                                          , -9, 1000, -23], kind=${k}$)
+
+   table = table_${k}$_t(nel=size(input))
+
+   do i = 1, size(input)
+    call table%add(input(i))
+   end do
+
+   call check(table%getfilled() == size(input), 'test_${k}$: issue with initial filled')
+
+   namefile = 'table_${k}$.h5'
+   call table%writehdf5(namefile, 'table_${k}$')
+
+   print *, 'MAYBE Successful writehdf5 ${k}$'
+
+  end subroutine
+
+  subroutine test_read_${k}$ ()
+   type(table_${k}$_t) :: table
+   type(table_${k}$_t) :: table1
+
+   integer :: i
+   character(*), parameter :: nametable = 'table_${k}$'
+   character(*), parameter :: namefile = nametable//'.h5'
+
+   ${t}$, parameter :: input(*) = ${m}$ ([10, 11, 111, 2222 &
+                                          , 22, 333, -5, 44 &
+                                          , -9, 1000, -23], kind=${k}$)
+
+   table = table_${k}$_t(nel=size(input))
+
+   do i = 1, size(input)
+    call table%add(input(i))
+   end do
+
+   call check(table%getfilled() == size(input), 'test_read_${k}$: issue with initial filled')
+
+   call table%writehdf5(namefile, nametable)
+
+   call table1%readhdf5(namefile, nametable)
+
+   call check(table%getfilled() == table1%getfilled(), 'read_hdf5_${k}$: issue with initial filled')
+
+   do i = 1, table%getfilled()
+    call check(table%get(i) == table1%get(i), 'read_hdf5_${k}$: issue with value: wrong value')
+   end do
+
+   print *, 'Successful readhdf5 ${k}$'
+
+  end subroutine
+
+ #:endfor
+
+ subroutine check(lcheck, a)
+  logical, intent(in) :: lcheck
+  character(*), intent(in), optional :: a
+
+  if (.not. lcheck) then
+   if (present(a)) print'(2a)', 'ERROR: ', a
+   error stop
+  end if
+ end subroutine
+
+end program

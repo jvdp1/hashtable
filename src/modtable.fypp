@@ -2,13 +2,16 @@
 module modtable
  use iso_fortran_env, only: int32, real32
  use modhash, only: next_power_of_2, seed_hash, hash
+#ifdef _HDF5
+ use h5fortran, only: hdf5_file, HSIZE_T
+#endif
  implicit none
  private
  #:for t,k,l,m in TYPES
- public :: table_${k}$_t
+  public :: table_${k}$_t
  #:endfor
  #:for t,k,l,m in NTYPES
- public :: table_arr${k}$_t
+  public :: table_arr${k}$_t
  #:endfor
 
  integer(int32), parameter :: default_nel = 5000
@@ -35,48 +38,52 @@ module modtable
  end interface
 
  #:for t,k,l,m in TYPES
- type, extends(tableabstract_t) :: table_${k}$_t !(k)
-  private
-  !integer, len :: k
-  !character(len=k),allocatable::stored(:)
-  ${t}$, allocatable :: stored(:)
- contains
-  private
-  procedure, public :: add => add_table${k}$_t
-  procedure, public :: destroy => destroy_table${k}$_t
-  procedure, public :: get => get_table${k}$_t
-  procedure, public :: getindex => getindex_table${k}$_t
-  procedure, public :: writetable => writetable_table${k}$_t
-  procedure, public :: writestream => writetable_table_stream${k}$_t
-  procedure, public :: readstream => readtable_table_stream${k}$_t
-  final :: destroy_table${k}$_t_scal, destroy_table${k}$_t_array1
- end type
+  type, extends(tableabstract_t) :: table_${k}$_t !(k)
+   private
+   !integer, len :: k
+   !character(len=k),allocatable::stored(:)
+   ${t}$, allocatable :: stored(:)
+  contains
+   private
+   procedure, public :: add => add_table${k}$_t
+   procedure, public :: destroy => destroy_table${k}$_t
+   procedure, public :: get => get_table${k}$_t
+   procedure, public :: getindex => getindex_table${k}$_t
+   procedure, public :: writetable => writetable_table${k}$_t
+   procedure, public :: writestream => writetable_table_stream${k}$_t
+   procedure, public :: readstream => readtable_table_stream${k}$_t
+#ifdef _HDF5
+   procedure, public :: writehdf5 => writetable_table_hdf5${k}$_t
+   procedure, public :: readhdf5 => readtable_table_hdf5${k}$_t
+#endif
+   final :: destroy_table${k}$_t_scal, destroy_table${k}$_t_array1
+  end type
 
- interface table_${k}$_t
-  module procedure constructor_table${k}$_t
- end interface
+  interface table_${k}$_t
+   module procedure constructor_table${k}$_t
+  end interface
 
  #:endfor
 
  #:for t,k,l,m in NTYPES
- type, extends(tableabstract_t) :: table_arr${k}$_t
-  private
-  ${t}$, allocatable :: stored(:, :)
- contains
-  private
-  procedure, public :: add => add_table_arr${k}$_t
-  procedure, public :: destroy => destroy_table_arr${k}$_t
-  procedure, public :: get => get_table_arr${k}$_t
-  procedure, public :: getindex => getindex_table_arr${k}$_t
-  procedure, public :: writetable => writetable_table_arr${k}$_t
-  procedure, public :: writestream => writetable_table_arr_stream${k}$_t
-  procedure, public :: readstream => readtable_table_arr_stream${k}$_t
-  final :: destroy_table_arr${k}$_t_scal, destroy_table_arr${k}$_t_array1
- end type
+  type, extends(tableabstract_t) :: table_arr${k}$_t
+   private
+   ${t}$, allocatable :: stored(:, :)
+  contains
+   private
+   procedure, public :: add => add_table_arr${k}$_t
+   procedure, public :: destroy => destroy_table_arr${k}$_t
+   procedure, public :: get => get_table_arr${k}$_t
+   procedure, public :: getindex => getindex_table_arr${k}$_t
+   procedure, public :: writetable => writetable_table_arr${k}$_t
+   procedure, public :: writestream => writetable_table_arr_stream${k}$_t
+   procedure, public :: readstream => readtable_table_arr_stream${k}$_t
+   final :: destroy_table_arr${k}$_t_scal, destroy_table_arr${k}$_t_array1
+  end type
 
- interface table_arr${k}$_t
-  module procedure constructor_table_arr${k}$_t
- end interface
+  interface table_arr${k}$_t
+   module procedure constructor_table_arr${k}$_t
+  end interface
 
  #:endfor
 
@@ -109,540 +116,625 @@ contains
 
  #:for t,k,l,m in TYPES
   #:if k[0] == 'c'
- pure function constructor_table${k}$_t(k, nel) result(this)
-  integer(kind=int32), intent(in) :: k
+   pure function constructor_table${k}$_t(k, nel) result(this)
+    integer(kind=int32), intent(in) :: k
     #:else
-  pure function constructor_table${k}$_t(nel) result(this)
+    pure function constructor_table${k}$_t(nel) result(this)
      #:endif
-   integer(kind=int32), intent(in), optional :: nel
-   type(table_${k}$_t) :: this
+     integer(kind=int32), intent(in), optional :: nel
+     type(table_${k}$_t) :: this
 
-   this%nel = next_power_of_2(default_nel)
-   if (present(nel)) this%nel = next_power_of_2(nel)
+     this%nel = next_power_of_2(default_nel)
+     if (present(nel)) this%nel = next_power_of_2(nel)
 
-   this%filled = 0
+     this%filled = 0
 
-   allocate (this%id(this%nel), source=0_int32)
+     allocate (this%id(this%nel), source=0_int32)
 
-   #:if k[0] == 'c'
-    allocate (character(len=k) :: this%stored(this%nel))
-    this%stored(:) = ''
-   #:else
-    allocate (this%stored(this%nel))
-    this%stored = 0
-   #:endif
-
-  end function
-
-  recursive subroutine add_table${k}$_t(this, c, index, lnew) !, col)
-   class(table_${k}$_t), intent(inout) :: this
-   ${l}$, intent(in) :: c
-   integer(int32), intent(out), optional :: index
-   !integer(int32), intent(out), optional :: col
-   logical, intent(out), optional :: lnew
-
-   integer(int32) :: i, address
-   integer(int32), parameter :: maxiter = 5000
-
-   if (real(this%filled) .gt. 0.80*this%nel) call increase_size()
-
-   address = seed_hash - 1
-
-   do i = 1, min(this%nel, maxiter) - 1
-    address = iand(hash(c, address + i), this%nel - 1) + 1
-
-    if (this%id(address) .eq. 0) then
-     this%filled = this%filled + 1
-     this%id(address) = this%filled
-     this%stored(this%id(address)) = c
-     if (present(index)) index = this%id(address)
-     if (present(lnew)) lnew = .true.
-     !if (present(col)) col = i
-     return
-    else !already occupied
-     if (this%stored(this%id(address)) .eq. c) then
-      if (present(index)) index = this%id(address)
-      if (present(lnew)) lnew = .false.
-      !if (present(col)) col = i
-      return
-     end if
-    end if
-   end do
-
-   call increase_size()
-
-   address = seed_hash - 1
-
-   do i = 1, min(this%nel, maxiter) - 1
-    address = iand(hash(c, address + i), this%nel - 1) + 1
-
-    if (this%id(address) .eq. 0) then
-     this%filled = this%filled + 1
-     this%id(address) = this%filled
-     this%stored(this%id(address)) = c
-     if (present(index)) index = this%id(address)
-     if (present(lnew)) lnew = .true.
-     !if (present(col)) col = min(this%nel, maxiter) - 1 + i
-     return
-    else !already occupied
-     if (this%stored(this%id(address)) .eq. c) then
-      if (present(index)) index = this%id(address)
-      if (present(lnew)) lnew = .false.
-      !if (present(col)) col = min(this%nel, maxiter) - 1 + i
-      return
-     end if
-    end if
-   end do
-
-   address = -1
-   if (present(index)) index = -1
-
-   error stop 'too many collisions'
-
-  contains
-
-   subroutine increase_size()
-    type(table_${k}$_t) :: thistmp
-
-      #:if k[0] == 'c'
-    thistmp = table_${k}$_t(len(this%stored), nel=int(this%nel*1.5, int32))
-      #:else
-    thistmp = table_${k}$_t(nel=int(this%nel*1.5, int32))
-      #:endif
-
-    do i = 1, this%filled
-     call thistmp%add(this%stored(i))
-    end do
-
-    this%filled = thistmp%filled
-    this%nel = thistmp%nel
-    if (allocated(this%id)) deallocate (this%id)
-    if (allocated(this%stored)) deallocate (this%stored)
-    call move_alloc(thistmp%id, this%id)
-    call move_alloc(thistmp%stored, this%stored)
-
-   end subroutine
-
-  end subroutine
-
-  pure subroutine destroy_table${k}$_t(this)
-   class(table_${k}$_t), intent(inout) :: this
-
-   call this%destroy_tableabstract_t
-
-   if (allocated(this%stored)) deallocate (this%stored)
-
-  end subroutine
-
-  pure subroutine destroy_table${k}$_t_scal(this)
-   type(table_${k}$_t), intent(inout) :: this
-
-   call this%destroy()
-
-  end subroutine
-
-  pure subroutine destroy_table${k}$_t_array1(this)
-   type(table_${k}$_t), intent(inout) :: this(:)
-
-   integer :: i
-
-   do i = 1, size(this)
-    call this(i)%destroy()
-   end do
-
-  end subroutine
-
-  pure function get_table${k}$_t(this, index) result(c)
-   class(table_${k}$_t), intent(in) :: this
-   integer(int32), intent(in) :: index
      #:if k[0] == 'c'
-   character(len=len(this%stored)) :: c
+      allocate (character(len=k) :: this%stored(this%nel))
+      this%stored(:) = ''
      #:else
-   ${t}$::c
+      allocate (this%stored(this%nel))
+      this%stored = 0
      #:endif
 
-   if (index .gt. this%filled) then
+    end function
+
+    recursive subroutine add_table${k}$_t(this, c, index, lnew) !, col)
+     class(table_${k}$_t), intent(inout) :: this
+     ${l}$, intent(in) :: c
+     integer(int32), intent(out), optional :: index
+     !integer(int32), intent(out), optional :: col
+     logical, intent(out), optional :: lnew
+
+     integer(int32) :: i, address
+     integer(int32), parameter :: maxiter = 5000
+
+     if (real(this%filled) > 0.80*this%nel) call increase_size()
+
+     address = seed_hash - 1
+
+     do i = 1, min(this%nel, maxiter) - 1
+      address = iand(hash(c, address + i), this%nel - 1) + 1
+
+      if (this%id(address) == 0) then
+       this%filled = this%filled + 1
+       this%id(address) = this%filled
+       this%stored(this%id(address)) = c
+       if (present(index)) index = this%id(address)
+       if (present(lnew)) lnew = .true.
+       !if (present(col)) col = i
+       return
+      else !already occupied
+       if (this%stored(this%id(address)) == c) then
+        if (present(index)) index = this%id(address)
+        if (present(lnew)) lnew = .false.
+        !if (present(col)) col = i
+        return
+       end if
+      end if
+     end do
+
+     call increase_size()
+
+     address = seed_hash - 1
+
+     do i = 1, min(this%nel, maxiter) - 1
+      address = iand(hash(c, address + i), this%nel - 1) + 1
+
+      if (this%id(address) == 0) then
+       this%filled = this%filled + 1
+       this%id(address) = this%filled
+       this%stored(this%id(address)) = c
+       if (present(index)) index = this%id(address)
+       if (present(lnew)) lnew = .true.
+       !if (present(col)) col = min(this%nel, maxiter) - 1 + i
+       return
+      else !already occupied
+       if (this%stored(this%id(address)) == c) then
+        if (present(index)) index = this%id(address)
+        if (present(lnew)) lnew = .false.
+        !if (present(col)) col = min(this%nel, maxiter) - 1 + i
+        return
+       end if
+      end if
+     end do
+
+     address = -1
+     if (present(index)) index = -1
+
+     error stop 'too many collisions'
+
+    contains
+
+     subroutine increase_size()
+      type(table_${k}$_t) :: thistmp
+
+      #:if k[0] == 'c'
+       thistmp = table_${k}$_t(len(this%stored), nel=int(this%nel*1.5, int32))
+      #:else
+       thistmp = table_${k}$_t(nel=int(this%nel*1.5, int32))
+      #:endif
+
+      do i = 1, this%filled
+       call thistmp%add(this%stored(i))
+      end do
+
+      this%filled = thistmp%filled
+      this%nel = thistmp%nel
+      if (allocated(this%id)) deallocate (this%id)
+      if (allocated(this%stored)) deallocate (this%stored)
+      call move_alloc(thistmp%id, this%id)
+      call move_alloc(thistmp%stored, this%stored)
+
+     end subroutine
+
+    end subroutine
+
+    pure subroutine destroy_table${k}$_t(this)
+     class(table_${k}$_t), intent(inout) :: this
+
+     call this%destroy_tableabstract_t
+
+     if (allocated(this%stored)) deallocate (this%stored)
+
+    end subroutine
+
+    pure subroutine destroy_table${k}$_t_scal(this)
+     type(table_${k}$_t), intent(inout) :: this
+
+     call this%destroy()
+
+    end subroutine
+
+    pure subroutine destroy_table${k}$_t_array1(this)
+     type(table_${k}$_t), intent(inout) :: this(:)
+
+     integer :: i
+
+     do i = 1, size(this)
+      call this(i)%destroy()
+     end do
+
+    end subroutine
+
+    pure function get_table${k}$_t(this, index) result(c)
+     class(table_${k}$_t), intent(in) :: this
+     integer(int32), intent(in) :: index
+     #:if k[0] == 'c'
+      character(len=len(this%stored)) :: c
+     #:else
+      ${t}$::c
+     #:endif
+
+     if (index > this%filled) then
       #:if k[0] == 'c'
       #:else
-    c = 0  !should NaN
+       c = 0  !should NaN
       #:endif
-    return !what should be the flag
-   end if
-
-   c = this%stored(index)
-
-  end function
-
-  pure function getindex_table${k}$_t(this, c) result(index)
-   class(table_${k}$_t), intent(in) :: this
-   ${l}$, intent(in) :: c
-   integer(int32) :: index
-
-   integer(int32) :: i, address
-   integer(int32), parameter :: maxiter = 5000
-
-   address = seed_hash - 1
-
-   do i = 1, min(this%nel, maxiter) - 1
-    address = iand(hash(c, address + i), this%nel - 1) + 1
-
-    if (this%id(address) .eq. 0) then
-     index = -2
-     return
-    else !occupied
-     if (this%stored(this%id(address)) .eq. c) then
-      index = this%id(address)
-      return
+      return !what should be the flag
      end if
-    end if
-   end do
 
-   index = -1
+     c = this%stored(index)
 
-  end function
+    end function
 
-  subroutine writetable_table${k}$_t(this, namefile)
-   class(table_${k}$_t), intent(in) :: this
-   character(*), intent(in) :: namefile
+    pure function getindex_table${k}$_t(this, c) result(index)
+     class(table_${k}$_t), intent(in) :: this
+     ${l}$, intent(in) :: c
+     integer(int32) :: index
 
-   integer :: i, un
+     integer(int32) :: i, address
+     integer(int32), parameter :: maxiter = 5000
 
-   open (newunit=un, file=namefile, action='write')
-   do i = 1, this%filled
-    #:if k == 'char'
-    write (un, table_char_fmt) i, this%get(i)
-    #:else
-    write (un, '(i0,1x,g0)') i, this%get(i)
-    #:endif
-   end do
-   close (un)
+     address = seed_hash - 1
 
-  end subroutine
+     do i = 1, min(this%nel, maxiter) - 1
+      address = iand(hash(c, address + i), this%nel - 1) + 1
 
-  subroutine writetable_table_stream${k}$_t(this, namefile)
-   class(table_${k}$_t), intent(in) :: this
-   character(*), intent(in) :: namefile
+      if (this%id(address) == 0) then
+       index = -2
+       return
+      else !occupied
+       if (this%stored(this%id(address)) == c) then
+        index = this%id(address)
+        return
+       end if
+      end if
+     end do
 
-   integer :: i, un
+     index = -1
 
-   open (newunit=un, file=namefile, action='write', access='stream', form='unformatted', status='replace')
+    end function
 
-   write (un) this%filled
+    subroutine writetable_table${k}$_t(this, namefile)
+     class(table_${k}$_t), intent(in) :: this
+     character(*), intent(in) :: namefile
 
-   write (un) 1_int32
+     integer :: i, un
 
-   write (un) storage_size(this%get(1), kind=int32)/8_int32  !store storage in bytes; 1 byte = 8 bits
+     open (newunit=un, file=namefile, action='write')
+     do i = 1, this%filled
+      #:if k == 'char'
+       write (un, table_char_fmt) i, this%get(i)
+      #:else
+       write (un, '(i0,1x,g0)') i, this%get(i)
+      #:endif
+     end do
+     close (un)
 
-   do i = 1, this%filled
-    write (un) this%get(i)
-   end do
+    end subroutine
 
-   close (un)
+    subroutine writetable_table_stream${k}$_t(this, namefile)
+     class(table_${k}$_t), intent(in) :: this
+     character(*), intent(in) :: namefile
 
-  end subroutine
+     integer :: i, un
 
-  subroutine readtable_table_stream${k}$_t(this, namefile)
-   class(table_${k}$_t), intent(out) :: this
-   character(*), intent(in) :: namefile
+     open (newunit=un, file=namefile, action='write', access='stream', form='unformatted', status='replace')
 
-   integer :: i, io, un
-   integer(int32) :: nfilled, nsize, nstorage
-   ${t}$, allocatable :: nvalue
+     write (un) this%filled
 
-   open (newunit=un, file=namefile, action='read', access='stream', form='unformatted', status='old')
+     write (un) 1_int32
 
-   read (un, iostat=io) nfilled
-   if (io .ne. 0) error stop 'readtable: wrong io for filled'
+     write (un) storage_size(this%get(1), kind=int32)/8_int32  !store storage in bytes; 1 byte = 8 bits
 
-   read (un, iostat=io) nsize
-   if (io .ne. 0) error stop 'readtable: wrong io for nsize'
-   if (nsize .ne. 1_int32) error stop 'readtable: wrong value for nsize'
+     do i = 1, this%filled
+      write (un) this%get(i)
+     end do
 
-   read (un, iostat=io) nstorage
-   if (io .ne. 0) error stop 'readtable: wrong io for nstorage'
+     close (un)
 
-   !Initiate the table
-   this%nel = next_power_of_2(int(1.3*nfilled, kind=int32))
-   this%filled = 0
+    end subroutine
 
-   allocate (this%id(this%nel), source=0_int32)
+    subroutine readtable_table_stream${k}$_t(this, namefile)
+     class(table_${k}$_t), intent(out) :: this
+     character(*), intent(in) :: namefile
 
-   #:if k[0] == 'c'
-    allocate (character(len=nstorage) :: this%stored(this%nel))
-    this%stored(:) = ''
-    allocate (character(len=nstorage) :: nvalue)
-   #:else
-    allocate (this%stored(this%nel))
-    this%stored = 0
-    allocate (nvalue)
-   #:endif
+     integer :: i, io, un
+     integer(int32) :: nfilled, nsize, nstorage
+     ${t}$, allocatable :: nvalue
 
-   do i = 1, nfilled
-    read (un, iostat=io) nvalue
-    if (io .ne. 0) error stop 'readtable: wrong io for nvalue'
-    call this%add(nvalue)
-   end do
+     open (newunit=un, file=namefile, action='read', access='stream', form='unformatted', status='old')
 
-   close (un)
+     read (un, iostat=io) nfilled
+     if (io /= 0) error stop 'readtable: wrong io for filled'
 
-  end subroutine
+     read (un, iostat=io) nsize
+     if (io /= 0) error stop 'readtable: wrong io for nsize'
+     if (nsize /= 1_int32) error stop 'readtable: wrong value for nsize'
+
+     read (un, iostat=io) nstorage
+     if (io /= 0) error stop 'readtable: wrong io for nstorage'
+
+     !Initiate the table
+     this%nel = next_power_of_2(int(1.3*nfilled, kind=int32))
+     this%filled = 0
+
+     allocate (this%id(this%nel), source=0_int32)
+
+     #:if k[0] == 'c'
+      allocate (character(len=nstorage) :: this%stored(this%nel))
+      this%stored(:) = ''
+      allocate (character(len=nstorage) :: nvalue)
+     #:else
+      allocate (this%stored(this%nel))
+      this%stored = 0
+      allocate (nvalue)
+     #:endif
+
+     do i = 1, nfilled
+      read (un, iostat=io) nvalue
+      if (io /= 0) error stop 'readtable: wrong io for nvalue'
+      call this%add(nvalue)
+     end do
+
+     close (un)
+
+    end subroutine
+
+#ifdef _HDF5
+    subroutine writetable_table_hdf5${k}$_t(this, namefile, nametable)
+     class(table_${k}$_t), intent(in) :: this
+     character(*), intent(in) :: namefile
+     character(*), intent(in) :: nametable
+
+     integer :: i, un
+     type(hdf5_file) :: h5f
+     ${t}$, allocatable :: vector(:)
+
+     #:if k[0] == 'c'
+      ${t}$, allocatable :: cdummy
+      cdummy = this%get(1)
+      allocate (character(len=len(cdummy)) :: vector(this%filled))
+     #:else
+      allocate (vector(this%filled))
+     #:endif
+
+     do i = 1, this%filled
+      vector(i) = this%get(i)
+     end do
+
+     call h5f%open(namefile, action='w', comp_lvl=1, debug=.false.)
+
+     call h5f%write('/ht/'//trim(nametable), vector)
+
+     #:if k[0] == 'c'
+      call h5f%writeattr('/ht/'//trim(nametable), 'len_char', len(cdummy))
+     #:endif
+
+     call h5f%close()
+
+    end subroutine
+
+    subroutine readtable_table_hdf5${k}$_t(this, namefile, nametable)
+     class(table_${k}$_t), intent(out) :: this
+     character(*), intent(in) :: namefile
+     character(*), intent(in) :: nametable
+
+     integer :: i
+     integer(int32) :: nfilled, nstorage
+     integer(HSIZE_T), allocatable :: dims(:)
+     character(len=:), allocatable :: ctable
+     ${t}$, allocatable :: nvalue(:)
+     type(hdf5_file) :: h5f
+
+     ctable = '/ht/'//trim(nametable)
+
+     call h5f%open(namefile, action='r', comp_lvl=1, debug=.true.)
+     call h5f%shape(ctable, dims)
+
+     nfilled = dims(1)
+
+     #:if k[0] == 'c'
+      call h5f%readattr(ctable, 'len_char', nstorage)
+      allocate (character(len=nstorage) :: nvalue(nfilled))
+     #:else
+      allocate (nvalue(nfilled))
+     #:endif
+
+     call h5f%read(ctable, nvalue)
+
+     call h5f%close()
+
+     !Initiate the table
+     this%nel = next_power_of_2(int(1.3*nfilled, kind=int32))
+     this%filled = 0
+
+     allocate (this%id(this%nel), source=0_int32)
+
+     #:if k[0] == 'c'
+      allocate (character(len=nstorage) :: this%stored(this%nel))
+      this%stored(:) = ''
+     #:else
+      allocate (this%stored(this%nel))
+      this%stored = 0
+     #:endif
+
+     do i = 1, nfilled
+      call this%add(nvalue(i))
+     end do
+
+    end subroutine
+#endif
     #:endfor
 
     #:for t,k,l,m in NTYPES
-  pure function constructor_table_arr${k}$_t(k, nel) result(this)
-   integer(kind=int32), intent(in) :: k
-   integer(kind=int32), intent(in), optional :: nel
-   type(table_arr${k}$_t) :: this
-
-   this%nel = next_power_of_2(default_nel)
-   if (present(nel)) this%nel = next_power_of_2(nel)
-
-   this%filled = 0
-
-   allocate (this%id(this%nel), source=0_int32)
+     pure function constructor_table_arr${k}$_t(k, nel) result(this)
+      integer(kind=int32), intent(in) :: k
+      integer(kind=int32), intent(in), optional :: nel
+      type(table_arr${k}$_t) :: this
+
+      this%nel = next_power_of_2(default_nel)
+      if (present(nel)) this%nel = next_power_of_2(nel)
+
+      this%filled = 0
+
+      allocate (this%id(this%nel), source=0_int32)
 
-   allocate (this%stored(k, this%nel))
-   this%stored = 0
+      allocate (this%stored(k, this%nel))
+      this%stored = 0
 
-  end function
+     end function
 
-  recursive subroutine add_table_arr${k}$_t(this, c, index, lnew)
-   class(table_arr${k}$_t), intent(inout) :: this
-   ${l}$, intent(in) :: c(:)
-   integer(int32), intent(out), optional :: index
-   logical, intent(out), optional :: lnew
+     recursive subroutine add_table_arr${k}$_t(this, c, index, lnew)
+      class(table_arr${k}$_t), intent(inout) :: this
+      ${l}$, intent(in) :: c(:)
+      integer(int32), intent(out), optional :: index
+      logical, intent(out), optional :: lnew
 
-   integer(int32) :: i, address
-   integer(int32), parameter :: maxiter = 5000
+      integer(int32) :: i, address
+      integer(int32), parameter :: maxiter = 5000
 
-   if (size(c) .ne. size(this%stored, 1)) then
-    if (present(index)) index = -1
-    if (present(lnew)) lnew = .false.
-    return
-   end if
+      if (size(c) /= size(this%stored, 1)) then
+       if (present(index)) index = -1
+       if (present(lnew)) lnew = .false.
+       return
+      end if
 
-   if (real(this%filled) .gt. 0.80*this%nel) call increase_size()
+      if (real(this%filled) > 0.80*this%nel) call increase_size()
 
-   address = seed_hash - 1
+      address = seed_hash - 1
 
-   do i = 1, min(this%nel, maxiter) - 1
-    address = iand(hash(c, address + i), this%nel - 1) + 1
+      do i = 1, min(this%nel, maxiter) - 1
+       address = iand(hash(c, address + i), this%nel - 1) + 1
 
-    if (this%id(address) .eq. 0) then
-     this%filled = this%filled + 1
-     this%id(address) = this%filled
-     this%stored(:, this%id(address)) = c
-     if (present(index)) index = this%id(address)
-     if (present(lnew)) lnew = .true.
-     return
-    else !already occupied
-     if (all(this%stored(:, this%id(address)) .eq. c)) then
-      if (present(index)) index = this%id(address)
-      if (present(lnew)) lnew = .false.
-      return
-     end if
-    end if
-   end do
+       if (this%id(address) == 0) then
+        this%filled = this%filled + 1
+        this%id(address) = this%filled
+        this%stored(:, this%id(address)) = c
+        if (present(index)) index = this%id(address)
+        if (present(lnew)) lnew = .true.
+        return
+       else !already occupied
+        if (all(this%stored(:, this%id(address)) == c)) then
+         if (present(index)) index = this%id(address)
+         if (present(lnew)) lnew = .false.
+         return
+        end if
+       end if
+      end do
 
-   call increase_size()
+      call increase_size()
 
-   address = seed_hash - 1
+      address = seed_hash - 1
 
-   do i = 1, min(this%nel, maxiter) - 1
-    address = iand(hash(c, address + i), this%nel - 1) + 1
+      do i = 1, min(this%nel, maxiter) - 1
+       address = iand(hash(c, address + i), this%nel - 1) + 1
 
-    if (this%id(address) .eq. 0) then
-     this%filled = this%filled + 1
-     this%id(address) = this%filled
-     this%stored(:, this%id(address)) = c
-     if (present(index)) index = this%id(address)
-     if (present(lnew)) lnew = .true.
-     return
-    else !already occupied
-     if (all(this%stored(:, this%id(address)) .eq. c)) then
-      if (present(index)) index = this%id(address)
-      if (present(lnew)) lnew = .false.
-      return
-     end if
-    end if
-   end do
+       if (this%id(address) == 0) then
+        this%filled = this%filled + 1
+        this%id(address) = this%filled
+        this%stored(:, this%id(address)) = c
+        if (present(index)) index = this%id(address)
+        if (present(lnew)) lnew = .true.
+        return
+       else !already occupied
+        if (all(this%stored(:, this%id(address)) == c)) then
+         if (present(index)) index = this%id(address)
+         if (present(lnew)) lnew = .false.
+         return
+        end if
+       end if
+      end do
 
-   address = -1
-   if (present(index)) index = -1
+      address = -1
+      if (present(index)) index = -1
 
-   error stop 'too many collisions'
+      error stop 'too many collisions'
 
-  contains
+     contains
 
-   subroutine increase_size()
-    type(table_arr${k}$_t) :: thistmp
+      subroutine increase_size()
+       type(table_arr${k}$_t) :: thistmp
 
-    thistmp = table_arr${k}$_t(size(this%stored, 1), nel=int(this%nel*1.5, int32))
+       thistmp = table_arr${k}$_t(size(this%stored, 1), nel=int(this%nel*1.5, int32))
 
-    do i = 1, this%filled
-     call thistmp%add(this%stored(:, i))
-    end do
+       do i = 1, this%filled
+        call thistmp%add(this%stored(:, i))
+       end do
 
-    this%filled = thistmp%filled
-    this%nel = thistmp%nel
-    if (allocated(this%id)) deallocate (this%id)
-    if (allocated(this%stored)) deallocate (this%stored)
-    call move_alloc(thistmp%id, this%id)
-    call move_alloc(thistmp%stored, this%stored)
+       this%filled = thistmp%filled
+       this%nel = thistmp%nel
+       if (allocated(this%id)) deallocate (this%id)
+       if (allocated(this%stored)) deallocate (this%stored)
+       call move_alloc(thistmp%id, this%id)
+       call move_alloc(thistmp%stored, this%stored)
 
-   end subroutine
+      end subroutine
 
-  end subroutine
+     end subroutine
 
-  pure subroutine destroy_table_arr${k}$_t(this)
-   class(table_arr${k}$_t), intent(inout) :: this
+     pure subroutine destroy_table_arr${k}$_t(this)
+      class(table_arr${k}$_t), intent(inout) :: this
 
-   call this%destroy_tableabstract_t
+      call this%destroy_tableabstract_t
 
-   if (allocated(this%stored)) deallocate (this%stored)
+      if (allocated(this%stored)) deallocate (this%stored)
 
-  end subroutine
+     end subroutine
 
-  pure subroutine destroy_table_arr${k}$_t_scal(this)
-   type(table_arr${k}$_t), intent(inout) :: this
+     pure subroutine destroy_table_arr${k}$_t_scal(this)
+      type(table_arr${k}$_t), intent(inout) :: this
 
-   call this%destroy()
+      call this%destroy()
 
-  end subroutine
+     end subroutine
 
-  pure subroutine destroy_table_arr${k}$_t_array1(this)
-   type(table_arr${k}$_t), intent(inout) :: this(:)
+     pure subroutine destroy_table_arr${k}$_t_array1(this)
+      type(table_arr${k}$_t), intent(inout) :: this(:)
 
-   integer :: i
+      integer :: i
 
-   do i = 1, size(this)
-    call this(i)%destroy()
-   end do
+      do i = 1, size(this)
+       call this(i)%destroy()
+      end do
 
-  end subroutine
+     end subroutine
 
-  pure function get_table_arr${k}$_t(this, index) result(c)
-   class(table_arr${k}$_t), intent(in) :: this
-   integer(int32), intent(in) :: index
-   ${t}$::c(size(this%stored,1))
+     pure function get_table_arr${k}$_t(this, index) result(c)
+      class(table_arr${k}$_t), intent(in) :: this
+      integer(int32), intent(in) :: index
+      ${t}$::c(size(this%stored,1))
 
-   if (index .gt. this%filled) then
-    c = 0
-    return !what should be the flag
-   end if
+      if (index > this%filled) then
+       c = 0
+       return !what should be the flag
+      end if
 
-   c = this%stored(:, index)
+      c = this%stored(:, index)
 
-  end function
+     end function
 
-  pure function getindex_table_arr${k}$_t(this, c) result(index)
-   class(table_arr${k}$_t), intent(in) :: this
-   ${l}$, intent(in) :: c(:)
-   integer(int32) :: index
+     pure function getindex_table_arr${k}$_t(this, c) result(index)
+      class(table_arr${k}$_t), intent(in) :: this
+      ${l}$, intent(in) :: c(:)
+      integer(int32) :: index
 
-   integer(int32) :: i, address
-   integer(int32), parameter :: maxiter = 5000
+      integer(int32) :: i, address
+      integer(int32), parameter :: maxiter = 5000
 
-   if (size(c) .ne. size(this%stored, 1)) then
-    index = -1
-    return
-   end if
+      if (size(c) /= size(this%stored, 1)) then
+       index = -1
+       return
+      end if
 
-   address = seed_hash - 1
+      address = seed_hash - 1
 
-   do i = 1, min(this%nel, maxiter) - 1
-    address = iand(hash(c, address + i), this%nel - 1) + 1
+      do i = 1, min(this%nel, maxiter) - 1
+       address = iand(hash(c, address + i), this%nel - 1) + 1
 
-    if (this%id(address) .eq. 0) then
-     index = -1
-     return
-    else !occupied
-     if (all(this%stored(:, this%id(address)) .eq. c)) then
-      index = this%id(address)
-      return
-     end if
-    end if
-   end do
+       if (this%id(address) == 0) then
+        index = -1
+        return
+       else !occupied
+        if (all(this%stored(:, this%id(address)) == c)) then
+         index = this%id(address)
+         return
+        end if
+       end if
+      end do
 
-   index = -1
+      index = -1
 
-  end function
+     end function
 
-  subroutine writetable_table_arr${k}$_t(this, namefile)
-   class(table_arr${k}$_t), intent(in) :: this
-   character(*), intent(in) :: namefile
+     subroutine writetable_table_arr${k}$_t(this, namefile)
+      class(table_arr${k}$_t), intent(in) :: this
+      character(*), intent(in) :: namefile
 
-   integer :: i, un
+      integer :: i, un
 
-   open (newunit=un, file=namefile, action='write')
-   do i = 1, this%filled
-    write (un, '(i0,*(1x,g0))') i, this%get(i)
-   end do
-   close (un)
+      open (newunit=un, file=namefile, action='write')
+      do i = 1, this%filled
+       write (un, '(i0,*(1x,g0))') i, this%get(i)
+      end do
+      close (un)
 
-  end subroutine
+     end subroutine
 
-  subroutine writetable_table_arr_stream${k}$_t(this, namefile)
-   class(table_arr${k}$_t), intent(in) :: this
-   character(*), intent(in) :: namefile
+     subroutine writetable_table_arr_stream${k}$_t(this, namefile)
+      class(table_arr${k}$_t), intent(in) :: this
+      character(*), intent(in) :: namefile
 
-   integer :: i, un
+      integer :: i, un
 
-   open (newunit=un, file=namefile, action='write', access='stream', form='unformatted', status='replace')
+      open (newunit=un, file=namefile, action='write', access='stream', form='unformatted', status='replace')
 
-   write (un) this%filled
+      write (un) this%filled
 
-   write (un) size(this%get(1), kind=int32)
+      write (un) size(this%get(1), kind=int32)
 
-   write (un) storage_size(this%get(1), kind=int32)/8_int32  !store storage in bytes; 1 byte = 8 bits
+      write (un) storage_size(this%get(1), kind=int32)/8_int32  !store storage in bytes; 1 byte = 8 bits
 
-   do i = 1, this%filled
-    write (un) this%get(i)
-   end do
+      do i = 1, this%filled
+       write (un) this%get(i)
+      end do
 
-   close (un)
+      close (un)
 
-  end subroutine
+     end subroutine
 
-  subroutine readtable_table_arr_stream${k}$_t(this, namefile)
-   class(table_arr${k}$_t), intent(out) :: this
-   character(*), intent(in) :: namefile
+     subroutine readtable_table_arr_stream${k}$_t(this, namefile)
+      class(table_arr${k}$_t), intent(out) :: this
+      character(*), intent(in) :: namefile
 
-   integer :: i, io, un
-   integer(int32) :: nfilled, nsize, nstorage
-   ${t}$, allocatable :: nvalue(:)
+      integer :: i, io, un
+      integer(int32) :: nfilled, nsize, nstorage
+      ${t}$, allocatable :: nvalue(:)
 
-   open (newunit=un, file=namefile, action='read', access='stream', form='unformatted', status='old')
+      open (newunit=un, file=namefile, action='read', access='stream', form='unformatted', status='old')
 
-   read (un, iostat=io) nfilled
-   if (io .ne. 0) error stop 'readtable_arr: wrong io for filled'
+      read (un, iostat=io) nfilled
+      if (io /= 0) error stop 'readtable_arr: wrong io for filled'
 
-   read (un, iostat=io) nsize
-   if (io .ne. 0) error stop 'readtable_arr: wrong io for nsize'
+      read (un, iostat=io) nsize
+      if (io /= 0) error stop 'readtable_arr: wrong io for nsize'
 
-   read (un, iostat=io) nstorage
-   if (io .ne. 0) error stop 'readtable_arr: wrong io for nstorage'
+      read (un, iostat=io) nstorage
+      if (io /= 0) error stop 'readtable_arr: wrong io for nstorage'
 
-   !Initiate the table
-   this%nel = next_power_of_2(int(1.3*nfilled, kind=int32))
-   this%filled = 0
+      !Initiate the table
+      this%nel = next_power_of_2(int(1.3*nfilled, kind=int32))
+      this%filled = 0
 
-   allocate (this%id(this%nel), source=0_int32)
+      allocate (this%id(this%nel), source=0_int32)
 
-   allocate (this%stored(nsize, this%nel))
-   this%stored = 0
+      allocate (this%stored(nsize, this%nel))
+      this%stored = 0
 
-   allocate (nvalue(nsize))
+      allocate (nvalue(nsize))
 
-   do i = 1, nfilled
-    read (un, iostat=io) nvalue
-    if (io .ne. 0) error stop 'readtable_arr: wrong io for nvalue'
-    call this%add(nvalue)
-   end do
+      do i = 1, nfilled
+       read (un, iostat=io) nvalue
+       if (io /= 0) error stop 'readtable_arr: wrong io for nvalue'
+       call this%add(nvalue)
+      end do
 
-   close (un)
+      close (un)
 
-  end subroutine
+     end subroutine
     #:endfor
 
-  end module
+    end module
