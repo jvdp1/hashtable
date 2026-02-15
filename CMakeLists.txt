@@ -21,7 +21,7 @@ get_directory_property(is-subproject PARENT_DIRECTORY)
 
 project(
   "hashtable"
-  LANGUAGES "Fortran"
+  LANGUAGES Fortran C
   VERSION "0.1.0"
   DESCRIPTION "Hash table"
 )
