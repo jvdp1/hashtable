@@ -32,6 +32,15 @@ include(GNUInstallDirs)
 # General configuration information
 add_subdirectory("config")
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/config/cmake")
+
+option(HT_HDF5_ENABLE "Enabling HDF5 support" OFF)
+
+# Find h5fortran
+if(HT_HDF5_ENABLE AND NOT TARGET "h5fortran::h5fortran")
+  find_package("h5fortran" REQUIRED)
+endif()
+
 # --- find preprocessor
 find_program(FYPP fypp)
 if(NOT FYPP)
@@ -48,6 +57,10 @@ list(
 # Collect source of the project
 set(srcs)
 add_subdirectory("src")
+
+target_link_libraries("${PROJECT_NAME}-lib" PUBLIC
+    $<$<BOOL:${HT_HDF5_ENABLE}>:h5fortran::h5fortran>
+)
 
 # We need the module directory before we finish the configure stage
 if(NOT EXISTS "${PROJECT_BINARY_DIR}/include")
@@ -72,11 +85,16 @@ target_include_directories(
 target_compile_definitions(
   "${PROJECT_NAME}-lib"
   PRIVATE
+  "$<$<BOOL:${HT_HDF5_ENABLE}>:_HDF5>"
 )
 
 # Export targets for other projects
 add_library("${PROJECT_NAME}" INTERFACE)
-target_link_libraries("${PROJECT_NAME}" INTERFACE "${PROJECT_NAME}-lib")
+
+target_link_libraries("${PROJECT_NAME}" INTERFACE "${PROJECT_NAME}-lib"
+#    $<$<BOOL:${HT_HDF5_ENABLE}>:h5fortran::h5fortran>
+)
+
 install(
   TARGETS
   "${PROJECT_NAME}"

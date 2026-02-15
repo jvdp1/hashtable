@@ -20,3 +20,7 @@ ADDTEST(hash)
 #ADDTEST(list)
 ADDTEST(table)
 ADDTESTFYPP(table_stream)
+
+if(HT_HDF5_ENABLE)
+  ADDTESTFYPP(table_hdf5)
+endif()
