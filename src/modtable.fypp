@@ -313,9 +313,9 @@ contains
     pure function getstored_table${k}$_t(this) result(c)
      class(table_${k}$_t), intent(in) :: this
      #:if k[0] == 'c'
-      character(len=len(this%stored)) :: c(this%filled)
+      character(len=len(this%stored)), allocatable :: c(:)
      #:else
-      ${t}$::c(this%filled)
+      ${t}$, allocatable :: c(:)
      #:endif
 
      c = this%stored(1:this%filled)
@@ -674,7 +674,7 @@ contains
 
      pure function getstored_table_arr${k}$_t(this) result(c)
       class(table_arr${k}$_t), intent(in) :: this
-      ${t}$::c(size(this%stored, 1), this%filled)
+      ${t}$, allocatable :: c(:,:)
 
       c = this%stored(:, 1:this%filled)
 
