@@ -37,7 +37,7 @@ contains
 
   call check(table%getfilled() == size(input), 'char: issue with initial filled')
 
-  call check(all(table%getstored() == input), '${k}$: issue with getstored')
+  call check(all(table%getstored() == input), 'char: issue with getstored')
 
   namefile = 'table_char.stream'
   call table%writestream(namefile)
