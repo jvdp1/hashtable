@@ -1,9 +1,9 @@
 # Fortran stdlib Makefile
 
 FC = ifort
-FFLAGS = -g -check all -traceback -stand f08
+FFLAGS = -g -fpp -check all -traceback -stand f18
 #FC = gfortran
-#FFLAGS = -g -Wall -std=f2008
+#FFLAGS = -g -cpp -Wall -std=f2008
 FYPPFLAGS=
 
 export FC

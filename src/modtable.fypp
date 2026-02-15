@@ -49,6 +49,7 @@ module modtable
    procedure, public :: destroy => destroy_table${k}$_t
    procedure, public :: get => get_table${k}$_t
    procedure, public :: getindex => getindex_table${k}$_t
+   procedure, public :: getstored => getstored_table${k}$_t
    procedure, public :: writetable => writetable_table${k}$_t
    procedure, public :: writestream => writetable_table_stream${k}$_t
    procedure, public :: readstream => readtable_table_stream${k}$_t
@@ -75,6 +76,7 @@ module modtable
    procedure, public :: destroy => destroy_table_arr${k}$_t
    procedure, public :: get => get_table_arr${k}$_t
    procedure, public :: getindex => getindex_table_arr${k}$_t
+   procedure, public :: getstored => getstored_table_arr${k}$_t
    procedure, public :: writetable => writetable_table_arr${k}$_t
    procedure, public :: writestream => writetable_table_arr_stream${k}$_t
    procedure, public :: readstream => readtable_table_arr_stream${k}$_t
@@ -308,6 +310,18 @@ contains
 
     end function
 
+    pure function getstored_table${k}$_t(this) result(c)
+     class(table_${k}$_t), intent(in) :: this
+     #:if k[0] == 'c'
+      character(len=len(this%stored)) :: c(this%filled)
+     #:else
+      ${t}$::c(this%filled)
+     #:endif
+
+     c = this%stored(1:this%filled)
+
+    end function
+
     subroutine writetable_table${k}$_t(this, namefile)
      class(table_${k}$_t), intent(in) :: this
      character(*), intent(in) :: namefile
@@ -317,9 +331,9 @@ contains
      open (newunit=un, file=namefile, action='write')
      do i = 1, this%filled
       #:if k == 'char'
-       write (un, table_char_fmt) i, this%get(i)
+       write (un, table_char_fmt) i, this%stored(i)
       #:else
-       write (un, '(i0,1x,g0)') i, this%get(i)
+       write (un, '(i0,1x,g0)') i, this%stored(i)
       #:endif
      end do
      close (un)
@@ -338,10 +352,10 @@ contains
 
      write (un) 1_int32
 
-     write (un) storage_size(this%get(1), kind=int32)/8_int32  !store storage in bytes; 1 byte = 8 bits
+     write (un) storage_size(this%stored(1), kind=int32)/8_int32  !store storage in bytes; 1 byte = 8 bits
 
      do i = 1, this%filled
-      write (un) this%get(i)
+      write (un) this%stored(i)
      end do
 
      close (un)
@@ -406,15 +420,13 @@ contains
 
      #:if k[0] == 'c'
       ${t}$, allocatable :: cdummy
-      cdummy = this%get(1)
+      cdummy = this%stored(1)
       allocate (character(len=len(cdummy)) :: vector(this%filled))
      #:else
       allocate (vector(this%filled))
      #:endif
 
-     do i = 1, this%filled
-      vector(i) = this%get(i)
-     end do
+     vector(:) = this%stored(1:this%filled)
 
      call h5f%open(namefile, action='w', comp_lvl=1, debug=.false.)
 
@@ -660,6 +672,14 @@ contains
 
      end function
 
+     pure function getstored_table_arr${k}$_t(this) result(c)
+      class(table_arr${k}$_t), intent(in) :: this
+      ${t}$::c(size(this%stored, 1), this%filled)
+
+      c = this%stored(:, 1:this%filled)
+
+     end function
+
      subroutine writetable_table_arr${k}$_t(this, namefile)
       class(table_arr${k}$_t), intent(in) :: this
       character(*), intent(in) :: namefile
@@ -668,7 +688,7 @@ contains
 
       open (newunit=un, file=namefile, action='write')
       do i = 1, this%filled
-       write (un, '(i0,*(1x,g0))') i, this%get(i)
+       write (un, '(i0,*(1x,g0))') i, this%stored(:,i)
       end do
       close (un)
 
@@ -684,12 +704,12 @@ contains
 
       write (un) this%filled
 
-      write (un) size(this%get(1), kind=int32)
+      write (un) size(this%stored(:,1), kind=int32)
 
-      write (un) storage_size(this%get(1), kind=int32)/8_int32  !store storage in bytes; 1 byte = 8 bits
+      write (un) storage_size(this%stored(:,1), kind=int32)/8_int32  !store storage in bytes; 1 byte = 8 bits
 
       do i = 1, this%filled
-       write (un) this%get(i)
+       write (un) this%stored(:,i)
       end do
 
       close (un)
