@@ -37,6 +37,8 @@ contains
 
   call check(table%getfilled() == size(input), 'char: issue with initial filled')
 
+  call check(all(table%getstored() == input), 'char: issue with getstored')
+
   namefile = 'table_char.stream'
   call table%writestream(namefile)
 
@@ -66,7 +68,7 @@ contains
 
   print *, 'Successful writestream char'
 
- end subroutine
+ end subroutine test_char
 
  #:for t,k,l,m in NTYPES
  subroutine test_${k}$ ()
@@ -88,6 +90,8 @@ contains
   end do
 
   call check(table%getfilled() == size(input), '${k}$: issue with initial filled')
+
+  call check(all(table%getstored() == input), '${k}$: issue with getstored')
 
   namefile = 'table_${k}$.stream'
   call table%writestream(namefile)
@@ -116,7 +120,7 @@ contains
 
   print *, 'Successful writestream ${k}$'
 
- end subroutine
+ end subroutine test_${k}$
 
  subroutine test_read_${k}$ ()
   type(table_${k}$_t) :: table
@@ -137,6 +141,8 @@ contains
 
   call check(table%getfilled() == size(input), '${k}$: issue with initial filled')
 
+  call check(all(table%getstored() == input), '${k}$: issue with getstored')
+
   call table%writestream(namefile)
 
   call table1%readstream(namefile)
@@ -149,7 +155,7 @@ contains
 
   print *, 'Successful readstream ${k}$'
 
- end subroutine
+ end subroutine test_read_${k}$
 
  subroutine test_arr${k}$ ()
   type(table_arr${k}$_t) :: table
@@ -170,6 +176,8 @@ contains
   end do
 
   call check(table%getfilled() == size(input, 2), 'arr${k}$: issue with initial filled')
+
+  call check(all(table%getstored() == input), 'arr${k}$: issue with getstored')
 
   namefile = 'table_arr${k}$.stream'
   call table%writestream(namefile)
@@ -200,7 +208,7 @@ contains
 
   print *, 'Successful writestream arr${k}$'
 
- end subroutine
+ end subroutine test_arr${k}$
 
  subroutine test_read_arr${k}$ ()
   type(table_arr${k}$_t) :: table
@@ -220,6 +228,8 @@ contains
 
   call check(table%getfilled() == size(input, 2), 'arr${k}$: issue with initial filled')
 
+  call check(all(table%getstored() == input), 'arr${k}$: issue with getstored')
+
   call table%writestream(namefile)
 
   call table1%readstream(namefile)
@@ -232,7 +242,7 @@ contains
 
   print *, 'Successful readstream arr${k}$'
 
- end subroutine
+ end subroutine test_read_arr${k}$
 
  #:endfor
 
